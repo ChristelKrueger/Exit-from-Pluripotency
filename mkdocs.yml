@@ -1,0 +1,24 @@
+site_name: Exit from Pluripotency
+
+nav:
+  - Home: index.md
+  
+
+
+theme: 
+  name: material
+  palette:
+    primary: deep purple
+  logo: images/logo.png
+  favicon: favicon.png
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - navigation.top
+
+

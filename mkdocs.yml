@@ -9,8 +9,8 @@ theme:
   name: material
   palette:
     primary: deep purple
-  logo: images/logo.png
-  favicon: favicon.png
+  logo: images/clusters_for_icon.png
+  favicon: images/favicon.png
   features:
     - navigation.instant
     - navigation.tracking

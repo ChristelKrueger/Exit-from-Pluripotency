@@ -2,6 +2,10 @@ site_name: Exit from Pluripotency
 
 nav:
   - Home: index.md
+  - QC and Quantitation: QC_and_quantitation.md
+  - UMAP representation and Clustering: UMAP_representation_clustering.md
+  - Network: network.md
+  - Software: software.md
   
 
 

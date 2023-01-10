@@ -31,7 +31,7 @@ Post-mapping QC was performed with Seqmonk and Vistories assessing data distribu
 
 ## Excluded regions
 
-ChIP input samples were used to blacklist coverage outliers and some regions which were represented differently in DNMT and TET cell lines. Details can be found in this [Seqmonk Vistory](pluirpotency_exit_input_comparison.html).
+ChIP input samples were used to blacklist coverage outliers and some regions which were represented differently in DNMT and TET cell lines. Details can be found in this [Seqmonk Vistory](./QC/pluripotency_exit_input_comparison.html).
 
 
 ## Quantitation

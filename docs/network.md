@@ -5,6 +5,10 @@ hide:
 
 Global interactions were also represented as a network largely based on the Canvas representation introduced in Chovanec, Collier et al., 2021.  The R igraph package was used to construct an undirected graph in which genomic regions (HindIII fragments) are represented as vertices/nodes and interactions are represented as edges. A combined network was produced using all significant interactions in any of the conditions. This allows for changes in interactions between the different conditions. The network was visualised with a force-directed layout (ForceAtlas2) in Gephi v0.9. This representation pulls highly interacting regions closer together while less interacting regions are kept apart.
 
+Layout parameters were as follows:
+
+![Gephi layout parameters](images/Gephi_parameters.png)
+
 To aid visualisation of the levels of different marks, we binned the quantitations into the categories "low", "medium low", "medium high" and "high". As the different marks have different absolute levels and show different signal distributions, we categorised the data via percentiles in their empirical cumulative distribution fuction.
 
 Here is an example illustrating the process: The cumulative distribution of ATAC signal across different conditions is shown. There is a steady increase in signal across large parts of the data prompting us to introduce thresholds at 25, 50 and 75th percentiles.
@@ -28,6 +32,6 @@ Here are the thresholds for all marks:
 
 *Note that methylation was categorised according to absolute levels rather than percentiles as it was not measured by an enrichment method and also because the absolute levels and distributions were very different between samples:
 
-![ecdf mC example](images/ecdf_mc_example.png)
+![ecdf mC example](images/ecdf_mC_example.png)
 
 

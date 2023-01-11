@@ -1,4 +1,5 @@
 site_name: Exit from Pluripotency
+site_url: https://christelkrueger.github.io/Exit-from-Pluripotency
 
 nav:
   - Home: index.md

@@ -3,7 +3,7 @@ hide:
   - footer
 ---
 
-## Qualtiy control
+## Quality control
 
 Trimming, mapping, FastQC and FastqQScreen reports were collated using MultiQC. WGBS and PCHiC sample quality was assessed with Bismark and HiCUP reports, respectively. 
 

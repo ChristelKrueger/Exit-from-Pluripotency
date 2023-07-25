@@ -1,0 +1,291 @@
+---
+title: "Chromatin marks plots"
+output: html_notebook
+---
+
+
+Looking at chromatin marks for each of the clusters 
+
+Defining source, libraries and options
+
+```{r}
+source("cluster_analysis_functions.R")
+library(easystats)
+library(broom)
+options(scipen = 0)
+```
+
+
+Importing datasets
+
+The marks table was created for capped and uncapped values (the latter only to be used for colouring the umaps).
+Linkings of marks to clusters happens in the script series umap_20_01_20_unccapped_marks and was exported from there.
+
+```{r}
+#read_tsv("../data/clusters_20_capped_marks_220517.txt") -> clusters_capped_marks
+read_tsv("../data/clusters_20_uncapped_marks_220517.txt") -> clusters_uncapped_marks
+#read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> expression_import
+```
+
+```{r}
+clusters_uncapped_marks %>% 
+  rename_with(~gsub("H3K27Ac", "H3K27ac",.)) -> marks
+colnames(marks)
+```
+
+Getting some stats for Figure 3
+
+Figure 3a, Dnmt TKO - WT
+
+```{r}
+marks %>% 
+  filter(cluster_ID == "cluster16") %>% 
+  select(contains("Epi")) -> cluster16_Epi
+
+head(cluster16_Epi)
+```
+The data doesn't look normal. Let's check with Shapiro-Wilk test
+
+```{r}
+ks.test(cluster16_Epi$oe_H3K27ac_DNMT_WT_Epi, 'pnorm')
+```
+Because normality isn't met, use a non-parametric test although at that sample size it doesn't matter -> Mann Whitney U test
+
+K27ac_DNMT
+
+```{r}
+wilcox.test(cluster16_Epi$oe_H3K27ac_DNMT_WT_Epi, cluster16_Epi$oe_H3K27ac_DNMT_KO_Epi) %>% 
+  tidy() %>% 
+  mutate(comparison = "K27ac_DNMT WT vs KO") %>% 
+  relocate(comparison, .before = statistic) -> K27ac_DNMT_stats
+
+K27ac_DNMT_stats
+```
+
+Effect size
+
+```{r}
+cohens_d(cluster16_Epi$oe_H3K27ac_DNMT_WT_Epi, cluster16_Epi$oe_H3K27ac_DNMT_KO_Epi) 
+interpret_cohens_d(d = 0.12, rules = "cohen1988")
+```
+
+
+K4me1_DNMT
+
+```{r}
+wilcox.test(cluster16_Epi$oe_H3K4me1_DNMT_WT_Epi, cluster16_Epi$oe_H3K4me1_DNMT_KO_Epi) %>% 
+  tidy() %>% 
+  mutate(comparison = "K4me1_DNMT WT vs KO") %>% 
+  relocate(comparison, .before = statistic) -> K4me1_DNMT_stats
+
+K4me1_DNMT_stats
+```
+Effect size
+
+```{r}
+cohens_d(cluster16_Epi$oe_H3K4me1_DNMT_WT_Epi, cluster16_Epi$oe_H3K4me1_DNMT_KO_Epi) 
+interpret_cohens_d(d = 0.75, rules = "cohen1988")
+```
+
+Figure 3a: TET WT - KO
+
+K27ac_TET effect size
+
+```{r}
+cohens_d(cluster16_Epi$oe_H3K27ac_TET_WT_Epi, cluster16_Epi$oe_H3K27ac_TET_KO_Epi) 
+interpret_cohens_d(d = 0.58, rules = "cohen1988")
+```
+K4me1_TET effect size
+
+```{r}
+cohens_d(cluster16_Epi$oe_H3K4me1_TET_WT_Epi, cluster16_Epi$oe_H3K4me1_TET_KO_Epi) 
+interpret_cohens_d(d = 0.48, rules = "cohen1988")
+```
+
+------------------------------------------------------------------------------
+
+## Ok, needing a more generalised solution:
+
+### Functions
+
+Here is a function that calculates Cohen's d between WT and KO
+
+```{r}
+calculate_cohens_d <- function(data, variable_prefix, separator = "_") {
+  wt_columns <- grep(paste0("^", variable_prefix, ".*", "WT"), names(data), value = TRUE)
+  ko_columns <- grep(paste0("^", variable_prefix, ".*", "KO"), names(data), value = TRUE)
+
+  if (length(wt_columns) != length(ko_columns)) {
+    stop("Unequal number of WT and KO columns")
+  }
+
+  result <- tibble()
+  for (i in seq_along(wt_columns)) {
+    wt_col <- data[[wt_columns[i]]]
+    ko_col <- data[[ko_columns[i]]]
+    comparison_name <- wt_columns[i]
+    comparison_name <- gsub("_WT_Epi", "", comparison_name)
+    cohens_d_value <- cohens_d(wt_col, ko_col)
+    result <- bind_rows(result, tibble(Comparison = comparison_name, Cohens_d = cohens_d_value))
+  }
+
+  return(result)
+}
+```
+
+Here is a function that runs the calculate Cohen's d function across all the histone marks I need
+
+```{r}
+
+calculate_cohens_d_multiple <- function(prefixes_to_calculate) {
+  
+  result_nested <- calculate_cohens_d(input_tibble, variable_prefix = prefixes_to_calculate)
+  result_nested %>% 
+    unnest(cols = c(Cohens_d)) -> results
+  return(results)
+  
+}
+```
+
+
+
+### Cohen's d for cluster16_ Epi
+
+```{r}
+prefixes_to_calculate <- c("bait_H3K27ac", "oe_H3K27ac", "bait_H3K4me1", "oe_H3K4me1", "bait_H3K27me3", "oe_H3K27me3")
+input_tibble <- cluster16_Epi
+
+map(prefixes_to_calculate, calculate_cohens_d_multiple) %>% 
+  bind_rows() %>% 
+  separate(Comparison, into = c("fragment", "mark", "genotype")) -> cluster16_cohensd
+
+cluster16_cohensd
+```
+
+
+### Cohen's d for cluster12_ Epi
+
+Subsetting the cluster
+
+```{r}
+marks %>% 
+  filter(cluster_ID == "cluster12") %>% 
+  select(contains("Epi")) -> cluster12_Epi
+
+head(cluster12_Epi)
+```
+Calculating Cohen's d
+
+```{r}
+prefixes_to_calculate <- c("bait_H3K27ac", "oe_H3K27ac", "bait_H3K4me1", "oe_H3K4me1", "bait_H3K27me3", "oe_H3K27me3")
+input_tibble <- cluster12_Epi
+
+map(prefixes_to_calculate, calculate_cohens_d_multiple) %>% 
+  bind_rows() %>% 
+  separate(Comparison, into = c("fragment", "mark", "genotype")) -> cluster12_cohensd
+
+cluster12_cohensd
+```
+
+### Cohen's d for cluster2_ Epi
+
+Subsetting the cluster
+
+```{r}
+marks %>% 
+  filter(cluster_ID == "cluster2") %>% 
+  select(contains("Epi")) -> cluster2_Epi
+
+head(cluster2_Epi)
+```
+
+Calculating Cohen's d
+
+```{r}
+prefixes_to_calculate <- c("bait_H3K27ac", "oe_H3K27ac", "bait_H3K4me1", "oe_H3K4me1", "bait_H3K27me3", "oe_H3K27me3")
+input_tibble <- cluster2_Epi
+
+
+map(prefixes_to_calculate, calculate_cohens_d_multiple) %>% 
+  bind_rows() %>% 
+  separate(Comparison, into = c("fragment", "mark", "genotype")) -> cluster2_cohensd
+
+cluster2_cohensd
+```
+### Cohen's d for cluster17_ Epi
+
+Subsetting the cluster
+
+```{r}
+marks %>% 
+  filter(cluster_ID == "cluster17") %>% 
+  select(contains("Epi")) -> cluster17_Epi
+
+head(cluster17_Epi)
+```
+
+Calculating Cohen's d
+
+```{r}
+prefixes_to_calculate <- c("bait_H3K27ac", "oe_H3K27ac", "bait_H3K4me1", "oe_H3K4me1", "bait_H3K27me3", "oe_H3K27me3")
+input_tibble <- cluster17_Epi
+
+
+map(prefixes_to_calculate, calculate_cohens_d_multiple) %>% 
+  bind_rows() %>% 
+  separate(Comparison, into = c("fragment", "mark", "genotype")) -> cluster17_cohensd
+
+cluster17_cohensd
+```
+
+## Visualisation
+
+Preparing the data frame for plotting
+
+```{r}
+cluster16_cohensd %>% 
+  rename(`Active E (16)` = Cohens_d) %>% 
+  select(mark, fragment, genotype, `Active E (16)`) -> cluster16_temp
+
+cluster12_cohensd %>% 
+  rename(`Primed E (12)` = Cohens_d) %>% 
+  select(mark, fragment, genotype, `Primed E (12)`) -> cluster12_temp
+
+cluster2_cohensd %>% 
+  rename(`Polycomb (2)` = Cohens_d) %>% 
+  select(mark, fragment, genotype, `Polycomb (2)`) -> cluster2_temp
+
+cluster17_cohensd %>% 
+  rename(`Poised E (17)` = Cohens_d) %>% 
+  select(mark, fragment, genotype, `Poised E (17)`) -> cluster17_temp
+
+cluster12_temp %>% 
+  left_join(cluster16_temp) %>% 
+  left_join(cluster17_temp) %>% 
+  left_join(cluster2_temp) %>% 
+  mutate(fragment = gsub("bait", "P", fragment)) %>% 
+  mutate(fragment = gsub("oe", "PIR", fragment)) %>% 
+  mutate(mark = factor(mark, levels = c("H3K27me3", "H3K27ac", "H3K4me1")))  -> summary_cohensd_wide
+  
+summary_cohensd_wide %>% 
+  pivot_longer(4:last_col(), names_to = "cluster", values_to = "Cohens_d") %>% 
+  mutate(cluster = factor(cluster, levels = c("Active E (16)", "Primed E (12)", "Poised E (17)", "Polycomb (2)"))) %>% 
+  mutate(Cohens_d = round(Cohens_d, digits = 2))-> summary_cohensd
+
+summary_cohensd
+```
+
+Generating the heatmap
+
+```{r}
+summary_cohensd %>% 
+  ggplot(aes(cluster, mark, fill = -Cohens_d)) +
+  geom_tile() +
+  geom_text(label = -(summary_cohensd$Cohens_d)) +
+  facet_grid(rows = vars(genotype), cols = vars(fragment)) +
+  #scale_fill_viridis_c(option = "turbo") + 
+  scale_fill_distiller(palette = "RdYlBu", direction = -1, limits = c(-0.8, 0.8), na.value = "#d73026") +
+  theme(axis.title = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+

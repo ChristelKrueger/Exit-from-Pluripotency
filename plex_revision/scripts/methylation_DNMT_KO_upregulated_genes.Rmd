@@ -1,0 +1,100 @@
+---
+title: "Methylation of P/PIR of DNMT KO upregulated genes"
+output: html_notebook
+---
+
+
+Reviewer's comment:
+
+For example, the authors mention that “Dnmt TKO resulted in more upregulated than downregulated genes in EpiLC, consistent with a role in gene repression”. How many of the upregulated genes are associated with regulatory elements (promoter or enhancers) that actually get methylated during wildtype ESC-EpiLC transition, thereby implying direct responses in mutants. 
+
+- Identify P/PIR of DNMT KO upregulated genes
+- plot methylation DNMT ES WT to DNMT Epi WT
+
+Defining source, libraries and options
+
+```{r}
+source("cluster_analysis_functions.R")
+options(scipen = 0)
+```
+Plotting options
+
+```{r}
+
+```
+
+
+Importing datasets
+
+The marks table was created for capped and uncapped values (the latter only to be used for colouring the umaps).
+Linkings of marks to clusters happens in the script series umap_20_01_20_unccapped_marks and was exported from there.
+
+```{r}
+#read_tsv("../data/clusters_20_capped_marks_220517.txt") -> clusters_capped_marks
+read_tsv("../data/clusters_20_uncapped_marks_220517.txt") -> clusters_uncapped_marks
+#read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> expression_import
+read_tsv("../data/Annotated Probe Report for DE DNMT Epi WT vs KO no MTC.txt") -> DNMT_KO_Epi_upregulated_import
+```
+
+```{r}
+clusters_uncapped_marks %>% 
+  rename_with(~gsub("H3K27Ac", "H3K27ac",.)) -> marks
+colnames(marks)
+```
+Getting the gene names for the DNMT KO Epi upregulated genes
+
+```{r}
+DNMT_KO_Epi_upregulated_import %>% 
+  pull(Probe) -> DNMT_KO_Epi_up_genes
+```
+
+Filtering the marks table for methylation of elements associated with the upregulated genes
+
+```{r}
+marks %>% 
+  filter(bait_gene %in% DNMT_KO_Epi_up_genes) %>% 
+  select(interaction_ID, bait_gene, oe_gene, cluster_ID, contains("mC"), -contains("hmC"), -contains("TET")) -> methylation_up_genes
+
+head(methylation_up_genes)
+```
+Since we are really only looking at clusters 2, 12, 16, 17, maybe we should filter to only include those clusters in the analysis
+
+```{r}
+included_clusters <- c("cluster2", "cluster12", "cluster16", "cluster17")
+
+methylation_up_genes %>% 
+  filter(cluster_ID %in% included_clusters) %>% 
+  pivot_longer(5:last_col(), names_to = "condition", values_to = "methylation") %>% 
+  separate(condition, into = c("fragment", "mC", "DNMT", "genotype", "stage")) %>% 
+  select(-mC, -DNMT) %>% 
+  mutate(stage = factor(stage, levels = c("ES", "Epi"))) %>% 
+  mutate(fragment = gsub("bait", "P", fragment)) %>% 
+  mutate(fragment = gsub("oe", "PIR", fragment)) -> methylation_included_clusters
+
+head(methylation_included_clusters)
+```
+
+Plotting methylation across fragment, genotype and stage
+
+```{r, fig.width=4, fig.height=3}
+methylation_included_clusters %>% 
+  ggplot(aes(stage, methylation, fill = stage)) + 
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(cols = vars(fragment)) +
+  ylab("% methylation") +
+  theme(legend.position = "none", axis.title.x = element_blank()) -> methylation_upregulated_elements_violins
+
+
+  methylation_upregulated_elements_violins
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/methylation_DNMT_KO_up_genes_violins.png", methylation_upregulated_elements_violins, width = 4, height = 3)
+ggsave("../output/plots/methylation_DNMT_KO_up_genes_violins.svg", methylation_upregulated_elements_violins, width = 4, height = 3)
+```
+
+
+Note by: I haven't deduplicated the fragments, so if a promoter appears in more than one interaction, it will be plotted several times. I reasoned that this is ok as it represents different PIRs.

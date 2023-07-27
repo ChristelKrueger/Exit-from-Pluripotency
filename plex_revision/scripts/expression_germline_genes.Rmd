@@ -1,0 +1,122 @@
+---
+title: "Methylation of P/PIR of DNMT KO upregulated genes"
+output: html_notebook
+---
+
+
+Reviewer's comment:
+
+4. Germ line.
+The authors comment on the regulation of genes implicated in the three germ layers, but not at all on germ line genes. Do their promoters become methylated in EpiLC differentiation? (relevant to the comment in Line 126-127). How methylation is widely accepted to play a role in regulating germ line genes (PMID: 21057502). Is it possible that the ‘failure to differentiate’ observed in Dnmt TKO cells is aberrant upregulation of germ line genes are they regulated in the TKO EpiLCs and EBs? Promoter , which do include many pluripotency factors? Such issues are obviously relevant to the companion manuscript.
+
+- use germline gene list from Bourc'his lab
+- plot promoter methylation DNMT WT ES vs Epi
+- plot expression across conditions
+
+
+Defining source, libraries and options
+
+```{r}
+source("cluster_analysis_functions.R")
+options(scipen = 0)
+```
+
+Importing datasets
+
+The marks table was created for capped and uncapped values (the latter only to be used for colouring the umaps).
+Linkings of marks to clusters happens in the script series umap_20_01_20_unccapped_marks and was exported from there.
+
+```{r}
+#read_tsv("../data/clusters_20_capped_marks_220517.txt") -> clusters_capped_marks
+read_tsv("../data/clusters_20_uncapped_marks_220517.txt") -> clusters_uncapped_marks
+read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> expression_import
+read_tsv("../data/Annotated Probe Report for Germ Line Deborah.txt") -> germline_genes_import
+```
+
+```{r}
+clusters_uncapped_marks %>% 
+  rename_with(~gsub("H3K27Ac", "H3K27ac",.)) -> marks
+colnames(marks)
+```
+Getting the gene names for the germline genes
+
+```{r}
+germline_genes_import %>% 
+  pull(Probe) -> germline_genes
+```
+
+Filtering the marks table for methylation of elements associated with the germline genes
+
+```{r}
+marks %>% 
+  filter(bait_gene %in% germline_genes) %>% 
+  select(bait_ID, bait_gene, oe_gene,  contains("mC"), -contains("hmC"), -contains("TET"), -contains("oe")) %>% 
+  pivot_longer(3:4, names_to = "condition") %>% 
+  mutate(condition = gsub("bait_mC_DNMT_WT_", "", condition)) %>% 
+  distinct(bait_ID, condition,.keep_all = TRUE) %>% 
+  mutate(condition = factor(condition, levels = c("ES", "Epi"))) -> methylation_germline_promoters
+
+head(methylation_germline_promoters)
+```
+
+
+Plotting methylation across promoters
+
+```{r, fig.width=2, fig.height=3}
+methylation_germline_promoters %>% 
+  ggplot(aes(condition, value, fill = condition)) + 
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  ylab("% methylation") +
+  theme(legend.position = "none", axis.title.x = element_blank()) -> methylation_germline_promoters_violins
+
+
+  methylation_germline_promoters_violins
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/methylation_germline_genes_violins.png", methylation_germline_promoters_violins, width = 2, height = 3)
+ggsave("../output/plots/methylation_germline_genes_violins.svg", methylation_germline_promoters_violins, width = 2, height = 3)
+```
+
+
+Note by: Promoters are deduplicated. This actually made quite a difference to the shape of the violin. I think I'll redo the DNMT TKO upregulated ones as well.
+
+## Expression of germline genes
+
+```{r}
+expression_import %>% 
+  filter(Probe %in% germline_genes) %>% 
+  select(Probe, 13:last_col()) %>% 
+  pivot_longer(2:last_col(), names_to = "condition", values_to = "expression") %>% 
+  #mutate(condition = gsub("_ES", "_ES_0", condition)) %>% 
+  separate(condition, into = c("line", "genotype", "stage"), extra = "merge") %>% 
+  filter(line == "DNMT")  %>% 
+  mutate(stage = factor(stage, levels = c("ES", "Epi_1", "Epi_2", "EB_2", "EB_4", "EB_6", "EB_8"))) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  select(-line) -> germline_gene_expression
+
+head(germline_gene_expression)
+```
+Plotting
+
+```{r, fig.height=3.5, fig.width=5}
+germline_gene_expression %>% 
+  ggplot(aes(stage, expression, fill = genotype)) +
+  geom_violin(draw_quantiles = 0.5) +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour)) +
+  facet_grid(cols = vars(genotype)) +
+  ylab("expression in log2 RPKM") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5), legend.position = "none") -> expression_germline_violins
+
+expression_germline_violins
+```
+Export
+
+```{r}
+ggsave("../output/plots/expression_germline_violins.png", expression_germline_violins, width = 5, height = 3.5)
+ggsave("../output/plots/expression_germline_violins.svg", expression_germline_violins, width = 5, height = 3.5)
+```
+

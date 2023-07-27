@@ -17,12 +17,6 @@ Defining source, libraries and options
 source("cluster_analysis_functions.R")
 options(scipen = 0)
 ```
-Plotting options
-
-```{r}
-
-```
-
 
 Importing datasets
 
@@ -53,7 +47,7 @@ Filtering the marks table for methylation of elements associated with the upregu
 ```{r}
 marks %>% 
   filter(bait_gene %in% DNMT_KO_Epi_up_genes) %>% 
-  select(interaction_ID, bait_gene, oe_gene, cluster_ID, contains("mC"), -contains("hmC"), -contains("TET")) -> methylation_up_genes
+  select(interaction_ID, bait_ID, oe_ID, bait_gene, cluster_ID, contains("mC"), -contains("hmC"), -contains("TET")) -> methylation_up_genes
 
 head(methylation_up_genes)
 ```
@@ -64,6 +58,7 @@ included_clusters <- c("cluster2", "cluster12", "cluster16", "cluster17")
 
 methylation_up_genes %>% 
   filter(cluster_ID %in% included_clusters) %>% 
+  select(-cluster_ID) %>% 
   pivot_longer(5:last_col(), names_to = "condition", values_to = "methylation") %>% 
   separate(condition, into = c("fragment", "mC", "DNMT", "genotype", "stage")) %>% 
   select(-mC, -DNMT) %>% 
@@ -72,12 +67,23 @@ methylation_up_genes %>%
   mutate(fragment = gsub("oe", "PIR", fragment)) -> methylation_included_clusters
 
 head(methylation_included_clusters)
+
+methylation_included_clusters %>% 
+  filter(fragment == "P") %>% 
+  distinct(bait_ID, genotype, stage, .keep_all = TRUE) -> deduplicated_promoters
+
+methylation_included_clusters %>% 
+  filter(fragment == "PIR") %>% 
+  distinct(oe_ID, genotype, stage, .keep_all = TRUE) -> deduplicated_PIRs
+
+deduplicated_promoters %>% 
+  bind_rows(deduplicated_PIRs) -> methylation_included_clusters_dedup
 ```
 
 Plotting methylation across fragment, genotype and stage
 
 ```{r, fig.width=4, fig.height=3}
-methylation_included_clusters %>% 
+methylation_included_clusters_dedup %>% 
   ggplot(aes(stage, methylation, fill = stage)) + 
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
@@ -98,3 +104,5 @@ ggsave("../output/plots/methylation_DNMT_KO_up_genes_violins.svg", methylation_u
 
 
 Note by: I haven't deduplicated the fragments, so if a promoter appears in more than one interaction, it will be plotted several times. I reasoned that this is ok as it represents different PIRs.
+
+Later note: Actually, it does make a difference. I notices that when plotting expression. I have therefore now deduplicated the both P and PIRs. For promoters it makes a difference (the violin is much smoother), for the PIRs it doesn't.

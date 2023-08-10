@@ -277,7 +277,7 @@ summary_cohensd
 
 Generating the heatmap
 
-```{r}
+```{r, fig.width=7, fig.height=5}
 summary_cohensd %>% 
   ggplot(aes(cluster, mark, fill = -Cohens_d)) +
   geom_tile() +
@@ -285,7 +285,15 @@ summary_cohensd %>%
   facet_grid(rows = vars(genotype), cols = vars(fragment)) +
   #scale_fill_viridis_c(option = "turbo") + 
   scale_fill_distiller(palette = "RdYlBu", direction = -1, limits = c(-0.8, 0.8), na.value = "#d73026") +
-  theme(axis.title = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5))
+  theme(axis.title = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5), legend.title = element_blank()) -> cohens_heatmaps
+
+cohens_heatmaps
+```
+export
+
+```{r}
+ggsave("../output/plots/cohens_heatmaps.png", cohens_heatmaps, width = 7, height = 5)
+ggsave("../output/plots/cohens_heatmaps.svg", cohens_heatmaps, width = 7, height = 5)
 ```
 
 

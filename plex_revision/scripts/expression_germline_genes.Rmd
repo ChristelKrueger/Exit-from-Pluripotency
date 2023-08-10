@@ -120,3 +120,41 @@ ggsave("../output/plots/expression_germline_violins.png", expression_germline_vi
 ggsave("../output/plots/expression_germline_violins.svg", expression_germline_violins, width = 5, height = 3.5)
 ```
 
+I would quite like to plot these as medians with standard deviation ...
+
+
+```{r}
+# germline_gene_expression %>%
+#   group_by(stage, genotype) %>%
+#   summarise(median = median(expression), st_dev = sd(expression))  %>%
+#   ungroup() -> germline_summary
+
+germline_gene_expression %>%
+  group_by(stage, genotype) %>%
+  summarise(median = median(expression), quant_75 = quantile(expression, .75), , quant_25 = quantile(expression, .25))  %>%
+  ungroup() -> germline_summary
+
+head(germline_summary)
+
+```
+
+```{r, fig.height=3.5, fig.width=4}
+germline_summary %>% 
+  ggplot(aes(stage, median, colour = genotype, group = genotype)) +
+  geom_ribbon(aes(ymin = quant_25, ymax = quant_75, fill = genotype), linewidth = 0, alpha = 0.1) +
+  geom_line(size = 2) +
+  scale_colour_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour)) +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour)) +
+  #facet_grid(cols = vars(genotype)) +
+  ylab("expression in log2 RPKM") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5), legend.title = element_blank()) -> expression_germline_line
+
+expression_germline_line
+```
+
+Export
+
+```{r}
+ggsave("../output/plots/expression_germline_line.png", expression_germline_line, width = 4, height = 3.5)
+ggsave("../output/plots/expression_germline_line.svg", expression_germline_line, width = 4, height = 3.5)
+```

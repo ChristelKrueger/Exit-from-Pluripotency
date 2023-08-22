@@ -1,0 +1,283 @@
+---
+title: "Alternative clustering for Plex data"
+output: html_notebook
+---
+
+We have been asked by a reviewer to provide details on why we did what we did in terms of clustering. Here, I want to try out a different clustering approach to see if we get overlapping clustering and how sensitive the cluster borders are to different paramters.
+
+I thought I could try and use the Seurat workflow and 'pretend' that the magic table is sc RNAseq data.
+I have mainly been following this tutorial https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
+
+Loading libraries
+
+```{r}
+library(Seurat)
+library(tidyverse)
+```
+
+Importing the interaction pair data
+
+```{r}
+read_tsv("../data/umap_mark_data_uncapped.txt") -> marks_import
+head(marks_import)
+colnames(marks_import)
+```
+Retaining only the columns that should go into clustering
+
+```{r}
+marks_import %>% 
+  select(-contains("UMAP"), -P_ID, -PIR_ID, -P_gene, -PIR_gene, -contains("Input"), -cluster_ID, -cluster_group) %>% # the labels and marks I don't want
+  select(-contains("DNMT"), -contains("ES"), -contains("KO")) -> marks # limiting to Epi and TET and WT
+head(marks)
+```
+Transposing this so it can be made into a Seurat object
+
+```{r}
+marks %>% 
+  column_to_rownames(var = "interaction_ID") %>% 
+  t() %>% 
+  as.data.frame() -> marks_transposed
+
+head(marks_transposed)
+```
+
+
+Making this into a Seurat object
+
+```{r}
+CreateSeuratObject(counts = marks_transposed, assay = "mark") -> marks_Seurat
+```
+
+LogNormalising the values
+
+```{r}
+marks_normalised <- NormalizeData(marks_Seurat)
+```
+
+Scaling the data
+
+```{r}
+all.marks <- rownames(marks_normalised)
+marks_scaled <- ScaleData(marks_normalised, features = all.marks)
+```
+
+performing linear dimensional reduction
+
+```{r}
+marks_PCA <- RunPCA(marks_scaled, features = all.marks)
+```
+
+The warnings here are ok, it just complains that it doesn't have enough dimensions and automatically reduces them to 17.
+```{r}
+DimPlot(marks_PCA, reduction = "pca", raster = FALSE)
+```
+
+```{r}
+#DimHeatmap(marks_PCA, dims = 1:5, balanced = TRUE)
+```
+```{r}
+ElbowPlot(marks_PCA)
+```
+It's hard to determine a cutoff for PCAs to use, I tried 8, 9 and 12 to check the clustering.
+
+Clustering
+
+-> KNN graph based on euclidean distance in PCA space with edge weights between samples by Jaccard similarity (overlap in local neighbourhoods)
+-> Louvain clustering 
+
+```{r}
+marks_KNN <- FindNeighbors(marks_PCA, dims = 1:12)
+marks_Louvain <- FindClusters(marks_KNN, resolution = 1)
+```
+
+I ran several iterations with different parameters to check what made the most sense with the UMAP representation.
+dim 9, resolution 0.8
+dim 9, resolution 1.2
+dim 15, resolution 1
+dim 12, resolution 1 (this is the one I settled on)
+
+
+Look at cluster IDs
+
+```{r}
+Idents(marks_Louvain) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "interaction_ID") %>% 
+  rename(Louvain_cluster_ID = ".") -> Louvain_clusters
+head(Louvain_clusters)
+```
+
+Now incorporating this info in the original table
+
+```{r}
+marks_import %>% 
+  left_join(Louvain_clusters) -> marks_2
+head(marks_2)
+```
+
+Plotting the original clusters
+
+```{r}
+marks_2 %>% 
+  slice_sample(prop = 0.1) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = cluster_ID)) +
+  geom_point(size = 0.5) +
+  theme_bw(base_size = 14) +
+  ggtitle("EM clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+```
+Plotting the Louvain clusters
+
+```{r}
+marks_2 %>% 
+  slice_sample(prop = 0.05) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = Louvain_cluster_ID)) +
+  geom_point(size = 0.5) +
+  geom_point(data = marks_2 %>% slice_sample(prop = 0.05) %>% filter(Louvain_cluster_ID == 9), size = 0.5, colour = "black") +
+  theme_bw(base_size = 14) +
+  ggtitle("Louvain clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+```
+
+Okay, let's explore these a bit more.
+
+How many regions per cluster?
+
+```{r}
+marks_2 %>% 
+  group_by(Louvain_cluster_ID) %>% 
+  count()
+```
+Looking at marks per cluster
+
+```{r}
+marks_2 %>% 
+  select(-UMAP1, -UMAP2, -P_ID, -PIR_ID, -P_gene, -PIR_gene, -contains("DNMT"), -contains("ES"), -contains("Input"), -contains("KO"), -contains("CHiC")) %>% 
+  select(interaction_ID, cluster_ID, cluster_group, Louvain_cluster_ID, everything()) %>% 
+  pivot_longer(5:last_col(), names_to = "condition", values_to = "values") %>% 
+  separate(condition, into = c("region", "mark")) -> marks_TET_Epi_long
+```
+The warning here is fine, I deliberately discard the additional pieces.
+
+Clusters to exclude (the ones with fewer than 1000 data points)
+
+```{r}
+excluded_clusters <- c("21", "22", "23", "24", "25", "26", "27", "28", "29", "30")
+```
+
+
+Plotting boxplots 
+
+```{r, fig.height=6, fig.width = 4}
+# marks_TET_Epi_long %>% 
+#   filter(mark != "mC") %>% 
+#   filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+#   ggplot(aes(Louvain_cluster_ID, values, fill = region)) +
+#   geom_boxplot(outlier.shape = NA) +
+#   ylim(0, 8) +
+#   theme_bw(base_size = 14) +
+#   facet_grid(rows = "mark")
+```
+
+
+Boxplots per cluster
+
+```{r, fig.height=17, fig.width = 10}
+marks_TET_Epi_long %>% 
+  filter(mark != "mC") %>% 
+  filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+  ggplot(aes(mark, values, fill = region)) +
+  geom_boxplot(outlier.shape = NA) +
+  ylim(0, 8) +
+  theme_bw(base_size = 14) +
+  facet_grid(rows = "Louvain_cluster_ID")
+```
+I then summarised the clusters according to their marks (and their presumed biological function).
+
+
+Summarised clusters
+
+```{r}
+cluster_group_names <- c("active P - unmarked PIR",
+                        "inactive P - low primed E",
+                        "PC P - unmarked PIR",
+                        "inactive P - unmarked PIR",
+                        "inactive P - low primed E, CTCF",
+                        "primed E",
+                        "poised E",
+                        "active P - active P",
+                        "active P - active E"
+                        )
+cluster_group_colours <- c("#b785bb", "#53c2b3", "#bf6c6c", "#b2b5b5", "#741113", "#eaca48", "#ca3526", "#91c740", "#252d37")
+names(cluster_group_colours) <- cluster_group_names
+```
+
+Plotting original summarised marks
+
+```{r}
+marks_2 %>% 
+  slice_sample(prop = 0.1) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = cluster_group)) +
+  geom_point(size = 0.5) +
+  theme_bw(base_size = 14) +
+  ggtitle("EM clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  scale_colour_manual(values = cluster_group_colours) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+```
+
+
+Summarising Louvain clusters
+(This one is for dim 12, resolution 1)
+
+```{r}
+P_unmarkedPIR <- c("2", "5", "13", "15")
+inactive_lowprimed <- c("9")
+PC_P_unmarked <- c("0", "12", "17")
+inactive_unmarked <- c("3", "4", "7", "9", "10", "14", "16")
+inactive_lowprimedCTCF <- c("1", "19")
+primed <- c("20", "6")
+poised <- c( "18")
+p_p <- c("11")
+active_activeE <- c("8")
+```
+
+
+```{r}
+marks_2 %>% 
+  filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_ID %in% P_unmarkedPIR ~ "active P - unmarked PIR",
+                                           Louvain_cluster_ID == inactive_lowprimed ~ "inactive P - low primed E",
+                                           Louvain_cluster_ID %in% PC_P_unmarked ~ "PC P - unmarked PIR",
+                                           Louvain_cluster_ID %in% inactive_unmarked ~ "inactive P - unmarked PIR",
+                                           Louvain_cluster_ID %in% inactive_lowprimedCTCF ~ "inactive P - low primed E, CTCF",
+                                           Louvain_cluster_ID == primed ~ "primed E",
+                                           Louvain_cluster_ID %in% poised ~ "poised E",
+                                           Louvain_cluster_ID == p_p ~ "active P - active P",
+                                           Louvain_cluster_ID %in% active_activeE ~ "active P - active E")) -> marks_3
+```
+
+Plotting Louvain summarised marks
+
+```{r}
+marks_3 %>% 
+  slice_sample(prop = 0.05) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = Louvain_cluster_group)) +
+  geom_point(size = 0.5) +
+  theme_bw(base_size = 14) +
+  ggtitle("Louvain clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  scale_colour_manual(values = cluster_group_colours) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+```
+
+Some clusters are strong and essentially pop up in all cluster conditions:
+
+- polycomb promoters
+- poised enhancers
+- inactive P - CTCF
+- active P - active P, although this one mixes easily with the active P active E cluster despite being quite defined on the UMAP
+- we then have the various clusters that form the 'body' of the UMAP which aren't clearly defined. They have various levels of K27ac at P and PIR and are therefore labelled as low primed enhancers, active enhancers, active and inactive promoters. Maybe we should be clearer about this in the text.
+

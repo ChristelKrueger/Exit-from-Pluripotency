@@ -1,0 +1,83 @@
+---
+title: "Re-clustering after UWOT"
+output: html_notebook
+---
+
+When looking for alternative ways of clustering and explored the Louvain algoriths, I noticed that the original EM clustering had used a UMAP representation of 30 dimensions of data. However, there are only 17 variables for TET WT Epi - not all 50 plus for all the conditions. I need to double check that this is actually the case but I'm pretty sure. As this makes no sense, I need to redo the clustering. 
+
+Packages and settings
+
+```{r}
+library(uwot)
+library(tidyverse)
+options(scipen = 999)
+```
+
+
+Importing the data
+
+```{r}
+read_tsv("../data/umap_mark_data_uncapped.txt") -> marks_import
+head(marks_import)
+colnames(marks_import)
+```
+
+Converting into a dataframe that only had the TET WT Epi data in
+
+```{r}
+marks_import %>% 
+  select(interaction_ID, contains("TET")) %>% 
+  select(interaction_ID, contains("EpiLC")) %>% 
+  select(interaction_ID, contains("WT")) %>% 
+  select(interaction_ID, contains("D2")) %>% 
+  select(-contains("Input")) %>% 
+  rename_with(~ gsub("WT_EpiLC_D2", "",.)) %>% 
+  column_to_rownames(var = "interaction_ID") -> marks_for_umap
+
+head(marks_for_umap)
+```
+
+Running umap
+
+```{r}
+uwot::umap(marks_for_umap, n_neighbors = 20, min_dist = 0.01, scale = TRUE) -> umap_2_dim
+
+umap_2_dim %>% 
+  data.frame() %>% 
+  rownames_to_column(var = "interaction_ID") %>% 
+  as_tibble() -> umap_2
+
+head(umap_2)
+```
+
+Checking the output
+
+```{r}
+umap_2 %>% 
+  sample_frac(size = 0.2) %>% 
+  ggplot(aes(X1, X2)) +
+  geom_point(size = 0.1) +
+  coord_cartesian(xlim = c(-10, 10), ylim = c(-10, 10)) +
+  theme(aspect.ratio = 1)
+```
+
+Dimensionality reduction for clustering
+
+```{r}
+uwot::umap(marks_for_umap, n_neighbors = 25, min_dist = 0.01, scale = TRUE, n_components = 15) -> umap_15_dim
+
+umap_15_dim %>% 
+  data.frame() %>% 
+  rownames_to_column(var = "interaction_ID") %>% 
+  as_tibble() -> umap_15
+
+head(umap_15)
+```
+Exporting
+
+```{r}
+write_csv(umap_15, "../output/tables/dim_reduction_15_for_clustering.csv")
+```
+
+
+

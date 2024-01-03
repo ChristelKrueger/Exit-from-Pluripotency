@@ -1,0 +1,373 @@
+---
+title: "Clustering UMAP"
+output:
+  html_document:
+    df_print: paged
+---
+
+Based on umap_20_01_20_capped_marks_220329.Rmd
+
+
+Umap was run using the uwot package, spectral initialisation on linear data, min_dist = 0.01, n_neigbors = 20, scale = TRUE for the 2D representation
+marks are linear but ChIP, ATAC and hmC are capped at 3MAD for display
+UMAP was also run with n_neighbors = 25 to 30 dimensions for input into the clustering (WEKA EM clustering for 20 clusters). This was because when running with 12 clusters, some that looked like they had genuine subclusters.
+
+During revision we realised that there aren't 30 dimentions in the data - in fact it's only 17. I therefore reran the n_neigbors = 25 to 15 dimensions (leaving out the last two to get rid of noise) and redid the EM clustering in WEKA.
+
+Here I want to compare how different the outcomes are.
+
+
+
+Loading packages and options
+
+```{r}
+library(tidyverse)
+```
+Plotting options 
+
+```{r}
+theme_set(theme_bw(base_size = 16))
+WT_colour <- "#9A0794"
+KO_colour <- "#FDDDFC"
+```
+
+
+Reading in the uncapped data with old cluster assignments
+As it turns out the uncapped data doesn't work to really look at the marks as there are some outliers which squish everything else together
+
+```{r}
+#read_tsv("../data/umap_mark_data_uncapped.txt") -> umap_import
+read_tsv("../data/umap_mark_data_capped.txt") -> umap_import
+read_csv("../data/clusters_15_dim_modified.csv", col_names = FALSE) -> clusters_15dim_import 
+
+```
+This wasn't great. Importing the arff file directly didn't work because the list of attributes was so long. I am not sure why it worked for the last script - even though I had to trick it by importing as tsv instead of the csv that it is. The problem was the third row which was just waaay to long. I couldn't just skip them because it got too close to the limit - I am assuming memory. I got round this by deleting all the header lines in Text Edit which was a bit of a pain but worked.
+
+I only want to keep the identifier and the cluster assignment
+
+```{r}
+clusters_15dim_import  %>% 
+  rename(interaction_ID = X2, cluster_ID_15dim = X18) %>% 
+  select(interaction_ID, cluster_ID_15dim) -> clusters_dim15_assignments
+
+head(clusters_dim15_assignments)
+
+```
+Matching umap coordinates with marks and cluster assignment
+
+```{r}
+umap_import %>% 
+  relocate(cluster_ID, .after = interaction_ID) %>% 
+  relocate(cluster_group, .after = cluster_ID) %>% 
+  rename(cluster_ID_30dim = cluster_ID) %>% 
+  left_join(clusters_dim15_assignments) %>% 
+  relocate(cluster_ID_15dim, .after = cluster_ID_30dim) %>% 
+  mutate(cluster_ID_30dim = factor(cluster_ID_30dim, levels = c("cluster0", "cluster1", "cluster2", "cluster3", "cluster4", "cluster5", "cluster6", "cluster7", "cluster8", "cluster9", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "cluster15", "cluster16", "cluster17", "cluster18", "cluster19"))) %>% 
+  mutate(cluster_ID_15dim = factor(cluster_ID_15dim, levels = c("cluster0", "cluster1", "cluster2", "cluster3", "cluster4", "cluster5", "cluster6", "cluster7", "cluster8", "cluster9", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "cluster15", "cluster16", "cluster17", "cluster18", "cluster19"))) -> umap_20_marks
+
+head(umap_20_marks)
+```
+Checking if there are any without cluster
+
+```{r}
+umap_20_marks %>% 
+  group_by(cluster_ID_15dim) %>% 
+  count()
+```
+Oh great, the cluster IDs don't match. Looks like I'll have to do this manually by location and mark ....
+
+
+Plotting the coordinates for dim 30
+
+```{r}
+umap_20_marks %>% 
+  sample_n(size = 10000) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = cluster_ID_30dim)) +
+  geom_point(size = 0.5) + 
+  theme(aspect.ratio = 1) +
+  scale_colour_viridis_d(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10), axis.title = element_text(size = 12)) -> umap_plot_clusters_30dim
+
+umap_plot_clusters_30dim
+#ggsave(filename = "../output/plots/umap_plot_clusters.png", umap_plot_clusters, width = 4, height = 4, units = "in", device = "png")
+```
+Plotting the coordinates for dim 15
+
+```{r}
+umap_20_marks %>% 
+  sample_n(size = 10000) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = cluster_ID_15dim)) +
+  geom_point(size = 0.5) + 
+  theme(aspect.ratio = 1) +
+  scale_colour_viridis_d(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  theme(legend.title = element_text(size = 10), legend.text = element_text(size = 10), axis.title = element_text(size = 12)) -> umap_plot_clusters_15dim
+
+umap_plot_clusters_15dim
+#ggsave(filename = "../output/plots/umap_plot_clusters.png", umap_plot_clusters, width = 4, height = 4, units = "in", device = "png")
+```
+
+
+How many in each cluster
+
+
+```{r}
+umap_20_marks %>% 
+  group_by(cluster_ID_15dim) %>% 
+  count()
+```
+Looking at Epi WT (the marks that were used to make umap and clustering)
+
+
+```{r}
+umap_20_marks %>% 
+  select(-contains("Input"), -contains("KO_"), -contains("ES")) -> umap_20_Epi_WT
+
+head(umap_20_Epi_WT)
+
+```
+
+
+
+Plotting the WT Epi marks (as examples to play around with)
+
+```{r}
+umap_20_Epi_WT %>% 
+  sample_n(size = 10000) %>% 
+  ggplot(aes(V1, V2, colour = bait_hmC_TET_WT_Epi)) +
+  geom_point(size = 0.8) + 
+  theme(aspect.ratio = 1) +
+  scale_colour_viridis_c(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  ggtitle("bait_hmC_TET_WT_Epi") +
+  theme(legend.title = element_blank(), plot.title = element_text(size = 12, hjust = 0.5), legend.text = element_text(size = 10), axis.title = element_text(size = 12)) -> coloured_plot
+
+coloured_plot
+```
+
+plotting all marks function
+
+```{r}
+export_plot <- function(colour_mark){
+  
+  umap_20_Epi_WT %>%
+  sample_n(size = 10000) %>%
+  ggplot(aes(V1, V2, colour = .data[[colour_mark]])) +
+  geom_point(size = 0.4) +
+  theme(aspect.ratio = 1) +
+  scale_colour_viridis_c(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  ggtitle(colour_mark) +
+  theme(legend.title = element_blank(), plot.title = element_text(size = 12, hjust = 0.5), legend.text = element_text(size = 10), axis.title = element_text(size = 12)) -> coloured_umap
+
+  ggsave(filename = paste0("../output/plots/", colour_mark, "_coloured_umap.png"), coloured_umap, width = 4, height = 4, units = "in", device = "png")
+}
+```
+
+exporting all these plots
+
+```{r}
+umap_20_Epi_WT %>% 
+  select(8:41) %>% 
+  colnames() -> colour_mark
+
+#sapply(colour_mark, function(x) export_plot(x))
+
+```
+
+Adding in the RNA-seq data
+
+As discussed with Aled, we'll include this for both the bait and the oe genes.
+
+```{r}
+read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> RNA_import
+```
+Tidying RNA import
+
+```{r}
+RNA_import %>% 
+  select(1,13:last_col()) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  rename_all(~paste0("RNA_", .)) %>% 
+  rename(gene = RNA_Probe) -> RNA
+
+head(RNA)
+```
+Merging with the interactions table
+
+```{r}
+umap_20_marks %>% 
+  left_join(RNA, by = c("P_gene" = "gene")) %>% 
+  rename_all(~gsub("RNA_", "P_RNA_", .)) %>% 
+  left_join(RNA, by = c("PIR_gene" = "gene")) %>% 
+  rename_with(~gsub("RNA_", "PIR_RNA_", .), .cols = starts_with("RNA")) -> IR_pairs_marks
+
+head(IR_pairs_marks)
+```
+Exporting this
+
+```{r}
+#write_tsv(IR_pairs_marks, "../output/tables/IR_pairs_marks_220225.txt")
+```
+
+
+
+
+Getting into long format
+
+```{r}
+IR_pairs_marks %>% 
+  rename_with(~gsub("CHiC", "P_CHiC", .)) %>% 
+  pivot_longer(P_CHiC_DNMT_KO_EpiLC_D2:last_col(), names_to = "conditions") %>% # separating the conditions column doesn't work because of memory issues
+  mutate(genotype = if_else(grepl("WT", conditions), "WT", "KO")) %>% 
+  mutate(line = if_else(grepl("DNMT", conditions), "DNMT", "TET")) %>% 
+  mutate(stage = case_when(grepl("ES", conditions) ~ "ES_0",
+                           grepl("Epi_1", conditions) ~ "Epi_1",
+                           grepl("Epi", conditions) ~ "Epi_2",
+                           grepl("EB_2", conditions) ~ "EB_2",
+                           grepl("EB_4", conditions) ~ "EB_4",
+                           grepl("EB_6", conditions) ~ "EB_6",
+                           grepl("EB_8", conditions) ~ "EB_8",
+                           TRUE ~ "rhino")) %>% 
+  mutate(fragment = if_else(grepl("PIR", conditions), "PIR", "P")) -> temp 
+
+temp %>% 
+  mutate(mark = gsub("P_", "", conditions)) %>% 
+  mutate(mark = gsub("PIR_", "", mark)) %>% 
+  mutate(mark = gsub("_.*", "", mark)) -> IR_pairs_marks_long
+
+head(IR_pairs_marks_long)
+
+```
+double checked the stage designation worked correctly
+
+Exporting this
+
+```{r}
+#write_tsv(IR_pairs_marks_long, "../output/tables/IR_pairs_marks_long_220225.txt")
+```
+
+
+
+Plotting cluster marks split by mark for bait TET WT Epi
+
+```{r, fig.width=10, fig.height=14}
+IR_pairs_marks_long %>% 
+  filter(genotype == "WT") %>% 
+  filter(mark != "CHiC") %>% 
+  filter(stage == "Epi_2") %>% 
+  filter(line == "TET") %>% 
+  filter(fragment == "P") %>% 
+  ggplot(aes(cluster_ID_15dim, value, fill = cluster_ID_15dim)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", ncol = 2) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("bait TET WT Epi cluster marks") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.title = element_blank())
+```
+
+
+Plotting cluster marks split by mark for oe TET WT Epi
+
+```{r, fig.width=10, fig.height=14}
+IR_pairs_marks_long %>% 
+  filter(genotype == "WT") %>% 
+  filter(stage == "Epi_2") %>% 
+  filter(line == "TET") %>% 
+  filter(fragment == "PIR") %>% 
+  ggplot(aes(cluster_ID_15dim, value, fill = cluster_ID_15dim)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", nrow = 5) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("oe TET WT Epi cluster marks") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.title = element_blank())
+```
+
+Grouping the clusters as before
+
+Summarising EM (dim 15) clusters
+
+
+```{r}
+P_unmarkedPIR <- c("4", "7", "11", "13", "18")
+active_lowprimed <- c("12")
+PC_P_unmarked <- c("0", "2", "9")
+inactive_unmarked <- c("1", "5", "6", "15")
+inactive_lowprimedCTCF <- c("19")
+primed <- c("14", "16")
+poised <- c( "3")
+p_p <- c("17")
+active_activeE <- c("8")
+```
+
+
+
+```{r}
+IR_pairs_marks %>% 
+  rename(cluster_group_30dim = cluster_group) %>% 
+  mutate(cluster_ID_15dim = gsub("cluster", "", cluster_ID_15dim)) %>% 
+  mutate(cluster_group_15dim = case_when(cluster_ID_15dim %in% P_unmarkedPIR ~ "active P - unmarked PIR",
+                                           cluster_ID_15dim == active_lowprimed ~ "active P - low primed E",
+                                           cluster_ID_15dim %in% PC_P_unmarked ~ "PC P - unmarked PIR",
+                                           cluster_ID_15dim %in% inactive_unmarked ~ "inactive P - unmarked PIR",
+                                           cluster_ID_15dim %in% inactive_lowprimedCTCF ~ "inactive P - low primed E, CTCF",
+                                           cluster_ID_15dim == primed ~ "primed E",
+                                           cluster_ID_15dim %in% poised ~ "poised E",
+                                           cluster_ID_15dim == p_p ~ "active P - active P",
+                                           cluster_ID_15dim %in% active_activeE ~ "active P - active E")) %>% 
+  relocate(cluster_group_15dim, .after = cluster_group_30dim) -> marks
+```
+
+Summarised clusters
+
+```{r}
+cluster_group_names <- c("active P - unmarked PIR",
+                        "active P - low primed E",
+                        "PC P - unmarked PIR",
+                        "inactive P - unmarked PIR",
+                        "inactive P - low primed E, CTCF",
+                        "primed E",
+                        "poised E",
+                        "active P - active P",
+                        "active P - active E"
+                        )
+cluster_group_colours <- c("#b785bb", "#53c2b3", "#bf6c6c", "#b2b5b5", "#741113", "#eaca48", "#ca3526", "#91c740", "#252d37")
+names(cluster_group_colours) <- cluster_group_names
+```
+
+
+Plotting EM clusters 15dim summarised marks
+
+```{r}
+marks %>% 
+  slice_sample(prop = 0.04) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = cluster_group_15dim)) +
+  geom_point(size = 0.3) +
+  theme_bw(base_size = 14) +
+  ggtitle("EM dim15 clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  scale_colour_manual(values = cluster_group_colours) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+```
+Exporting the cluster assignments
+
+```{r}
+marks %>% 
+  select(1:7) %>% 
+  write_tsv("../output/tables/EM_cluster_assignments.txt")
+
+```
+

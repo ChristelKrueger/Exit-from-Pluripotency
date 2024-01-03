@@ -1,5 +1,9 @@
 .Rproj.user
+*/.Rhistory
+*.nb.html
 /plex_revision/data/clusters_20_uncapped_marks_220517.txt
 .DS_Store
 /plex_revision/data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt
 /plex_revision/data/umap_mark_data_uncapped.txt
+plex_revision/data/clusters_20_capped_marks_220517.txt
+plex_revision/data/umap_mark_data_capped.txt

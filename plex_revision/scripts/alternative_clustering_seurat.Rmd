@@ -134,7 +134,7 @@ marks_2 %>%
   slice_sample(prop = 0.05) %>% 
   ggplot(aes(UMAP1, UMAP2, colour = Louvain_cluster_ID)) +
   geom_point(size = 0.5) +
-  geom_point(data = marks_2 %>% slice_sample(prop = 0.05) %>% filter(Louvain_cluster_ID == 9), size = 0.5, colour = "black") +
+  geom_point(data = marks_2 %>% slice_sample(prop = 0.05) %>% filter(Louvain_cluster_ID == 19), size = 0.5, colour = "black") +
   theme_bw(base_size = 14) +
   ggtitle("Louvain clusters") +
   coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
@@ -201,7 +201,7 @@ Summarised clusters
 
 ```{r}
 cluster_group_names <- c("active P - unmarked PIR",
-                        "inactive P - low primed E",
+                        "active P - low primed E",
                         "PC P - unmarked PIR",
                         "inactive P - unmarked PIR",
                         "inactive P - low primed E, CTCF",
@@ -217,7 +217,10 @@ names(cluster_group_colours) <- cluster_group_names
 Plotting original summarised marks
 
 ```{r}
+
 marks_2 %>% 
+  mutate(cluster_group = gsub("inactive P - low primed E", "active P - low primed E", cluster_group)) %>% 
+  mutate(cluster_group = gsub("active P - low primed E, CTCF", "inactive P - low primed E, CTCF", cluster_group)) %>% 
   slice_sample(prop = 0.1) %>% 
   ggplot(aes(UMAP1, UMAP2, colour = cluster_group)) +
   geom_point(size = 0.5) +
@@ -234,9 +237,9 @@ Summarising Louvain clusters
 
 ```{r}
 P_unmarkedPIR <- c("2", "5", "13", "15")
-inactive_lowprimed <- c("9")
+active_lowprimed <- c("9", "16")
 PC_P_unmarked <- c("0", "12", "17")
-inactive_unmarked <- c("3", "4", "7", "9", "10", "14", "16")
+inactive_unmarked <- c("3", "4", "7", "9", "10", "14")
 inactive_lowprimedCTCF <- c("1", "19")
 primed <- c("20", "6")
 poised <- c( "18")
@@ -249,13 +252,13 @@ active_activeE <- c("8")
 marks_2 %>% 
   filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
   mutate(Louvain_cluster_group = case_when(Louvain_cluster_ID %in% P_unmarkedPIR ~ "active P - unmarked PIR",
-                                           Louvain_cluster_ID == inactive_lowprimed ~ "inactive P - low primed E",
+                                           Louvain_cluster_ID %in% active_lowprimed ~ "active P - low primed E",
                                            Louvain_cluster_ID %in% PC_P_unmarked ~ "PC P - unmarked PIR",
                                            Louvain_cluster_ID %in% inactive_unmarked ~ "inactive P - unmarked PIR",
                                            Louvain_cluster_ID %in% inactive_lowprimedCTCF ~ "inactive P - low primed E, CTCF",
-                                           Louvain_cluster_ID == primed ~ "primed E",
+                                           Louvain_cluster_ID %in% primed ~ "primed E",
                                            Louvain_cluster_ID %in% poised ~ "poised E",
-                                           Louvain_cluster_ID == p_p ~ "active P - active P",
+                                           Louvain_cluster_ID %in% p_p ~ "active P - active P",
                                            Louvain_cluster_ID %in% active_activeE ~ "active P - active E")) -> marks_3
 ```
 

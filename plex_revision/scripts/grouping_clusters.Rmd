@@ -1,0 +1,391 @@
+---
+title: "Grouping clusters"
+output: html_notebook
+---
+
+04/01/2024
+
+I have recently reclustered our pairwise interaction data
+1) EM clustering on umap dimensionality reduced data to 15 dimensions (previously wrong with 30 dimensions)
+2) Louvain clustering after PCA dimensionality reduced data to 12 dimensions (as alternative clustering method).
+
+When these clusters were grouped to the larger categories that we had previously defined on the TET WT Epi data there seemed to be a very reasonable overlap between the two approaches. However, this was inconveniently spread over two scripts, so here I'm collating the information.
+
+In order to group the clusters I previously determined that it makes sense to use the capped data - otherwise the outlier clusters dominate the boxplots and most things look unmarked.
+
+Libraries and options
+
+```{r}
+library(tidyverse)
+options(scipen = 999)
+```
+
+Importing capped data and annotations
+
+```{r}
+read_tsv("../data/umap_mark_data_capped.txt") -> marks_capped
+read_tsv("../data/EM_cluster_assignments.txt") -> EM_clusters_import
+read_tsv("../data/Louvain_cluster_assignment.tsv") -> Louvain_clusters
+```
+Tidying and merging
+
+```{r}
+EM_clusters_import %>% 
+  select(interaction_ID, cluster_ID_15dim) -> EM_clusters
+
+marks_capped %>% 
+  select(-cluster_ID, -cluster_group) %>% 
+  left_join(EM_clusters) %>% 
+  left_join(Louvain_clusters) %>% 
+  relocate(cluster_ID_15dim, .after = interaction_ID) %>% 
+  relocate(Louvain_cluster_ID, .after = cluster_ID_15dim) %>% 
+  rename(EM_cluster_ID = cluster_ID_15dim) -> marks
+
+head(marks)
+```
+
+Displaying the individual EM clusters
+
+```{r, fig.width=4, fig.height=4}
+marks %>% 
+  sample_n(size = 7000) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = as.factor(EM_cluster_ID))) +
+  geom_point(size = 0.5) + 
+  scale_colour_viridis_d(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  theme_bw(base_size = 16) +
+  theme(aspect.ratio = 1, legend.title = element_blank(), legend.text = element_text(size = 6), axis.title = element_text(size = 12)) -> umap_plot_clusters_15dim
+
+umap_plot_clusters_15dim
+
+
+#ggsave(filename = "../output/plots/umap_plot_individual_clusters_EM.png", umap_plot_clusters_15dim, width = 4, height = 4, units = "in", device = "png")
+#ggsave(filename = "../output/plots/umap_plot_individual_clusters_EM.svg", umap_plot_clusters_15dim, width = 4, height = 4, units = "in", device = "svg")
+```
+
+Displaying the individual Louvain clusters
+
+Clusters to exclude (the ones with fewer than 1000 data points)
+
+```{r}
+excluded_clusters <- c("21", "22", "23", "24", "25", "26", "27", "28", "29", "30")
+```
+
+```{r, fig.height=4, fig.width=5}
+marks %>% 
+  #filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+  sample_n(size = 7000) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = as.factor(Louvain_cluster_ID))) +
+  geom_point(size = 0.5) + 
+  #geom_point(data = marks %>% filter(Louvain_cluster_ID == 30), colour = "red", size = 0.5) +
+  scale_colour_viridis_d(option  = "turbo") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
+  xlim(-10,12) +
+  ylim(-10,7) +
+  theme_bw(base_size = 16) +
+  theme(aspect.ratio = 1, legend.title = element_blank(), legend.text = element_text(size = 10), axis.title = element_text(size = 12)) -> umap_plot_clusters_Lou
+
+umap_plot_clusters_Lou
+
+
+#ggsave(filename = "../output/plots/umap_plot_individual_clusters_Lou.png", umap_plot_clusters_Lou, width = 6, height = 4, units = "in", device = "png")
+#ggsave(filename = "../output/plots/umap_plot_individual_clusters_Lou.svg", umap_plot_clusters_Lou, width = 6, height = 4, units = "in", device = "png")
+```
+
+Let's plot the marks for the clusters. For this, we'll only consider TET WT Epi so I'll make a smaller dataframe.
+
+```{r}
+marks %>% 
+  select(-contains("Input"), -contains("KO_"), -contains("ES"), -contains("DNMT")) -> marks_TET_WT_Epi
+
+head(marks_TET_WT_Epi)
+
+```
+
+I'm currently not adding the RNA data which makes the object much smaller. A normal pivot should work as this will need less memory than in for the big table I used in the other script.
+
+```{r}
+marks_TET_WT_Epi %>% 
+  select(-UMAP1, -UMAP2, -P_ID, -PIR_ID, -P_gene, -PIR_gene, -contains("CHiC")) %>% 
+  pivot_longer(P_hmC_TET_WT_EpiLC_D2:last_col(), names_to = "samples") %>% 
+  separate(samples, into = c("fragment", "mark"), extra = "drop") %>% 
+  mutate(EM_cluster_ID = factor(EM_cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"))) %>% 
+  mutate(Louvain_cluster_ID = factor(Louvain_cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20", "21","22","23","24","25","26","27","28","29","30"))) -> marks_TET_WT_Epi_long
+
+head(marks_TET_WT_Epi_long)
+```
+Plotting EM cluster marks
+
+```{r, fig.width=8, fig.height=10}
+marks_TET_WT_Epi_long %>% 
+  filter(fragment == "P") %>% 
+  ggplot(aes(EM_cluster_ID, value, fill = EM_cluster_ID)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", ncol = 2) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("P TET WT Epi marks by EM cluster") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.position = "none") -> P_marks_plot_EM
+
+P_marks_plot_EM
+```
+
+```{r, fig.width=8, fig.height=10}
+marks_TET_WT_Epi_long %>% 
+  filter(fragment == "PIR") %>% 
+  ggplot(aes(EM_cluster_ID, value, fill = EM_cluster_ID)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", ncol = 2) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("PIR TET WT Epi marks by EM cluster") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.position = "none") -> PIR_marks_plot_EM
+
+PIR_marks_plot_EM
+```
+
+Plotting Louvain cluster marks
+
+```{r, fig.width=8, fig.height=10}
+marks_TET_WT_Epi_long %>% 
+  filter(fragment == "P") %>% 
+  filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+  ggplot(aes(Louvain_cluster_ID, value, fill = Louvain_cluster_ID)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", ncol = 2) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("P TET WT Epi marks by Louvain cluster") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.position = "none") -> P_marks_plot_Louvain
+
+P_marks_plot_Louvain
+```
+
+```{r, fig.width=8, fig.height=10}
+marks_TET_WT_Epi_long %>% 
+  filter(fragment == "PIR") %>% 
+  filter(!Louvain_cluster_ID %in% excluded_clusters) %>% 
+  ggplot(aes(Louvain_cluster_ID, value, fill = Louvain_cluster_ID)) +
+  geom_boxplot(outlier.size = 0.5) +
+  facet_wrap(facets = "mark", scale = "free", ncol = 2) +
+  scale_fill_viridis_d(option = "turbo") +
+  ggtitle("PIR TET WT Epi marks by Louvain cluster") +
+  theme(axis.title.x = element_blank(), axis.text.x = element_text(size = 10, angle = 90, vjust = 0.3), plot.title = element_text(size = 14, hjust = 0.5), legend.position = "none") -> PIR_marks_plot_Louvain
+
+PIR_marks_plot_Louvain
+```
+
+Exporting
+
+```{r}
+ggsave(filename = "../output/plots/P_marks_plot_EM.png", P_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
+ggsave(filename = "../output/plots/PIR_marks_plot_EM.png", PIR_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
+ggsave(filename = "../output/plots/P_marks_plot_Louvain.png", P_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
+ggsave(filename = "../output/plots/PIR_marks_plot_Louvain.png", PIR_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
+```
+
+Soo .... I stared long and hard at these boxplots (again) and think we should make the following groupings. It's quite nice to see that EM and Louvain clustering come out relatively similar.
+
+EM cluster groupings
+
+```{r}
+EM_activeP_lowmarkedPIR <- c("4", "7", "10", "11", "12", "13", "18", "16")
+EM_pcP_unmarkedPIR <- c("0", "2", "9")
+EM_inactiveP_unmarkedPIR <- c("1", "5", "6", "15")
+EM_inactiveP_CTCFprimedE <- c("19")
+EM_inactiveP_primedE <- c("14")
+EM_bivalentP_poisedE <- c( "3")
+EM_activeP_activeP <- c("17")
+EM_activeP_activeE <- c("8")
+```
+
+
+Louvain cluster grouping
+
+```{r}
+Louvain_activeP_lowmarkedPIR <- c("2", "5", "9", "13", "15", "16")
+Louvain_pcP_unmarkedPIR <- c("0", "12", "17", "30")
+Louvain_inactiveP_unmarkedPIR <- c("3", "4", "7", "9", "10", "14", "21", "22", "23", "26", "27", "28", "29")
+Louvain_inactiveP_CTCFprimedE <- c("1", "19")
+Louvain_inactiveP_primedE <- c("20", "6")
+Louvain_bivalentP_poisedE <- c( "18", "25")
+Louvain_activeP_activeP <- c("11", "24")
+Louvain_activeP_activeE <- c("8")
+```
+
+In the end I assigned the previously excluded clusters to the groupings based on their location on the UMAP.
+
+Introducing the cluster groups
+
+```{r}
+marks %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_ID %in% Louvain_activeP_lowmarkedPIR ~ "active P - low marked PIR",
+                                           Louvain_cluster_ID %in% Louvain_pcP_unmarkedPIR ~ "polycomb P - unmarked PIR",
+                                           Louvain_cluster_ID %in% Louvain_inactiveP_unmarkedPIR ~ "inactive P - unmarked PIR",
+                                           Louvain_cluster_ID %in% Louvain_inactiveP_CTCFprimedE ~ "inactive P - primed E, CTCF",
+                                           Louvain_cluster_ID %in% Louvain_inactiveP_primedE ~ "inactive P - primed E",
+                                           Louvain_cluster_ID %in% Louvain_bivalentP_poisedE ~ "bivalent P - poised E",
+                                           Louvain_cluster_ID %in% Louvain_activeP_activeP ~ "active P - active P",
+                                           Louvain_cluster_ID %in% Louvain_activeP_activeE ~ "active P - active E")) %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_ID %in% EM_activeP_lowmarkedPIR ~ "active P - low marked PIR",
+                                           EM_cluster_ID %in% EM_pcP_unmarkedPIR ~ "polycomb P - unmarked PIR",
+                                           EM_cluster_ID %in% EM_inactiveP_unmarkedPIR ~ "inactive P - unmarked PIR",
+                                           EM_cluster_ID %in% EM_inactiveP_CTCFprimedE ~ "inactive P - primed E, CTCF",
+                                           EM_cluster_ID %in% EM_inactiveP_primedE ~ "inactive P - primed E",
+                                           EM_cluster_ID %in% EM_bivalentP_poisedE ~ "bivalent P - poised E",
+                                           EM_cluster_ID %in% EM_activeP_activeP ~ "active P - active P",
+                                           EM_cluster_ID %in% EM_activeP_activeE ~ "active P - active E")) %>%
+  relocate(Louvain_cluster_group, .after = Louvain_cluster_ID) %>% 
+  relocate(EM_cluster_group, .after = Louvain_cluster_ID) -> marks_groups
+
+head(marks_groups)
+```
+Some stats
+
+How many excluded Louvain clusters (fewer than 1000 data points)
+```{r}
+marks_groups %>% 
+  filter(is.na(Louvain_cluster_group)) %>% 
+  count()
+```
+Losing about 1 %. (This is with the small clusters excluded.)
+However, later on I assigned them to a group, therefore there are now none lost.
+
+How ofter is the cluster group the same between Louvain and EM?
+
+```{r}
+marks_groups %>% 
+  filter(EM_cluster_group == Louvain_cluster_group) %>% 
+  count() -> same
+
+same/nrow(marks_groups)*100
+```
+70 % overlap. Not as much as I would have expected, but not bad. It's going to be mainly in the continuum of the markings.
+
+Let's look at this in a bit more detail
+
+```{r}
+marks_groups %>% 
+  select(interaction_ID, EM_cluster_group, Louvain_cluster_group) %>% 
+  drop_na() %>% 
+  mutate(same = if_else(EM_cluster_group == Louvain_cluster_group, TRUE, FALSE, missing = FALSE)) %>% 
+  group_by(EM_cluster_group, same) %>% 
+  tally() %>% 
+  pivot_wider(names_from = same, values_from = n) %>% 
+  mutate(total = `FALSE` + `TRUE`) %>% 
+  mutate(percent_found_in_Louvain = `TRUE`/total*100)
+  
+```
+
+The primed enhancers are a bit low for my taste ...
+
+Let's visualise
+
+Defining the colours
+
+```{r}
+cluster_group_names <- c("active P - low marked PIR",
+                        "polycomb P - unmarked PIR",
+                        "inactive P - unmarked PIR",
+                        "inactive P - primed E, CTCF",
+                        "inactive P - primed E",
+                        "bivalent P - poised E",
+                        "active P - active P",
+                        "active P - active E"
+                        )
+cluster_group_colours <- c("#b785bb", "#bf6c6c", "#b2b5b5", "#741113", "#eaca48", "#ca3526", "#91c740", "#252d37")
+names(cluster_group_colours) <- cluster_group_names
+```
+
+Plotting EM clusters
+
+```{r, fig.width=8, fig.height=4}
+marks_groups %>% 
+  slice_sample(prop = 0.04) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = EM_cluster_group)) +
+  geom_point(size = 0.3) +
+  theme_bw(base_size = 14) +
+  ggtitle("EM clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  scale_colour_manual(values = cluster_group_colours) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5), legend.title = element_blank()) -> UMAP_EM_clusters
+
+UMAP_EM_clusters
+```
+  
+Exporting
+
+```{r}
+ggsave("../output/plots/UMAP_EM_clusters.png", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
+ggsave("../output/plots/UMAP_EM_clusters.svg", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
+```
+
+
+
+Plotting Louvain clusters
+
+```{r, fig.width=8, fig.height=4}
+marks_groups %>% 
+  slice_sample(prop = 0.04) %>% 
+  ggplot(aes(UMAP1, UMAP2, colour = Louvain_cluster_group)) +
+  geom_point(size = 0.3) +
+  theme_bw(base_size = 14) +
+  ggtitle("Louvain clusters") +
+  coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
+  scale_colour_manual(values = cluster_group_colours) +
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5), legend.title = element_blank()) -> UMAP_Louvain_clusters
+
+UMAP_Louvain_clusters
+```
+  
+Exporting
+
+```{r}
+ggsave("../output/plots/UMAP_Louvain_clusters.png", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
+ggsave("../output/plots/UMAP_Louvain_clusters.svg", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
+```
+
+
+
+
+Let's create the new 'magic tables' with these groups
+
+Importing and tidying the expression data
+
+```{r}
+read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> expression_import
+
+expression_import %>% 
+  select(Probe, DNMT_WT_ES:last_col()) %>% 
+  rename_with(~gsub("_ES", "_ES_0",.)) %>% 
+  rename_with(~paste0("RNA_", .)) %>% 
+  rename(Probe = RNA_Probe) %>% 
+  distinct(Probe, .keep_all = TRUE) -> expression
+
+head(expression)
+```
+Adding the expression data to the capped marks data
+
+```{r}
+marks_groups %>% 
+  left_join(expression, by = c("P_gene" = "Probe")) -> interaction_pair_attributes_capped
+```
+
+Now replacing the capped values with the uncapped ones
+
+```{r}
+read_tsv("../data/umap_mark_data_uncapped.txt") -> uncapped_import
+
+interaction_pair_attributes_capped %>% 
+  select(interaction_ID:Louvain_cluster_group) %>% 
+  left_join(uncapped_import) %>% 
+  left_join(expression, by = c("P_gene" = "Probe")) -> interaction_pair_attributes_uncapped
+```
+Exporting the new 'magic tables'
+
+```{r}
+write_tsv(interaction_pair_attributes_capped, "../output/tables/interaction_pairs_capped.txt")
+write_tsv(interaction_pair_attributes_uncapped, "../output/tables/interaction_pairs_uncapped.txt")
+```
+

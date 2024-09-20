@@ -1,0 +1,198 @@
+---
+title: "ES to Epi transition"
+output: html_notebook
+---
+
+Looking at chromatin marks for each of the cluster group in the transition from ES to Epi.
+This is an adapted script from June 22 but using the new cluster groups (EM 15 dim and Louvain)
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+
+
+Importing datasets
+
+The marks table was created for capped and uncapped values (the latter only to be used for colouring the umaps).
+Linkings of marks to clusters happens in the script grouping_clusters.Rmd and the 'magic tables' were exported from there.
+
+```{r}
+read_tsv("../data/interaction_pairs_capped.txt") -> clusters_capped_marks
+read_tsv("../data/interaction_pairs_uncapped.txt") -> clusters_uncapped_marks
+```
+
+
+Tidying expression 
+
+```{r}
+expression_import %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  select(Probe,13:last_col()) %>% 
+  rename_with(.cols = 2:last_col(), ~paste0("bait_RNA_",.)) %>% 
+  rename_with(.cols = 2:last_col(), ~gsub("ES", "ES_0",.)) -> expression
+
+head(expression)
+```
+
+
+Merging with marks data
+
+```{r}
+clusters_capped_marks %>% 
+  left_join(expression, by = c("bait_gene" = "Probe")) %>% 
+  relocate(cluster_ID, .after = interaction_ID) %>% 
+  rename_with( ~gsub("H3K27Ac", "H3K27ac",.)) %>%  
+  mutate(cluster_ID = factor(cluster_ID, levels = c("cluster0", "cluster1", "cluster2", "cluster3", "cluster4", "cluster5", "cluster6", "cluster7", "cluster8", "cluster9", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "cluster15", "cluster16", "cluster17", "cluster18", "cluster19"))) -> clusters_capped
+
+clusters_uncapped_marks %>% 
+  left_join(expression, by = c("bait_gene" = "Probe")) %>% 
+  relocate(cluster_ID, .after = interaction_ID) %>% 
+  rename_with( ~gsub("H3K27Ac", "H3K27ac",.)) %>%  
+  mutate(cluster_ID = factor(cluster_ID, levels = c("cluster0", "cluster1", "cluster2", "cluster3", "cluster4", "cluster5", "cluster6", "cluster7", "cluster8", "cluster9", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "cluster15", "cluster16", "cluster17", "cluster18", "cluster19"))) -> clusters_uncapped
+
+head(clusters_uncapped)
+```
+
+Making the comparison for TET WT ES vs EPI
+
+```{r}
+clusters_uncapped %>% 
+  select(-contains("DNMT"), -contains("KO"), -contains("RNA")) %>% 
+  wide_cluster_table_to_long() %>% 
+  select(-line, -genotype, -day) -> TET_WT
+
+head(TET_WT)
+```
+
+I'll have to adjust the y axis individually, that's why I'll be plotting these manually and then export. 
+
+```{r, fig.width=20, fig.height=5}
+TET_WT %>% 
+  mutate(cluster_ID = gsub("cluster", "", cluster_ID)) %>% 
+  mutate(cluster_ID = factor(cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"))) %>% 
+  filter(mark == "mC") %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ cluster_ID) +
+  coord_cartesian(ylim = c(0, 100)) +
+  ggtitle("TET WT mC") +
+  theme(legend.position = "none", axis.title.x = element_blank(), plot.title = element_text(size = 14, hjust = 0.5))
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/ES_to_Epi/TET_ES_to_Epi_mC.png", width = 20, height = 5, units = "in")
+ggsave("../output/plots/ES_to_Epi/TET_ES_to_Epi_mC.svg", width = 20, height = 5, units = "in")
+```
+
+Only one row for CHiC
+
+```{r, fig.width=20, fig.height=3}
+TET_WT %>% 
+  mutate(cluster_ID = gsub("cluster", "", cluster_ID)) %>% 
+  mutate(cluster_ID = factor(cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"))) %>% 
+  filter(mark == "CHiC") %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5) +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ cluster_ID) +
+  coord_cartesian(ylim = c(0,10)) +
+  ggtitle("TET WT CHiC") +
+  theme(legend.position = "none", axis.title.x = element_blank(), plot.title = element_text(size = 14, hjust = 0.5))
+```
+Exporting
+
+```{r}
+ggsave("../output/plots/ES_to_Epi/TET_ES_to_Epi_CHiC.png", width = 20, height = 3, units = "in")
+ggsave("../output/plots/ES_to_Epi/TET_ES_to_Epi_CHiC.svg", width = 20, height = 3, units = "in")
+```
+
+
+Making the comparison for DNMT WT ES vs EPI
+
+```{r}
+clusters_uncapped %>% 
+  select(-contains("TET"), -contains("KO"), -contains("RNA")) %>% 
+  wide_cluster_table_to_long() %>% 
+  select(-line, -genotype, -day) -> DNMT_WT
+
+head(DNMT_WT)
+```
+
+
+I'll have to adjust the y axis individually, that's why I'll be plotting these manually and then export. 
+
+```{r, fig.width=20, fig.height=5}
+DNMT_WT %>% 
+  mutate(cluster_ID = gsub("cluster", "", cluster_ID)) %>% 
+  mutate(cluster_ID = factor(cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"))) %>% 
+  filter(mark == "hmC") %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  scale_fill_manual(values = c(Epi_colour)) +
+  facet_grid(fragment ~ cluster_ID) +
+  coord_cartesian(ylim = c(0,10)) +
+  ggtitle("DNMT WT hmC") +
+  theme(legend.position = "none", axis.title.x = element_blank(), plot.title = element_text(size = 14, hjust = 0.5))
+```
+
+Exporting
+
+```{r warning=FALSE}
+ggsave("../output/plots/ES_to_Epi/DNMT_ES_to_Epi_hmC.png", width = 20, height = 5, units = "in")
+ggsave("../output/plots/ES_to_Epi/DNMT_ES_to_Epi_hmC.svg", width = 20, height = 5, units = "in")
+```
+
+Only one row for CHiC
+
+
+```{r, fig.width=20, fig.height=3}
+DNMT_WT %>% 
+  mutate(cluster_ID = gsub("cluster", "", cluster_ID)) %>% 
+  mutate(cluster_ID = factor(cluster_ID, levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"))) %>% 
+  filter(mark == "CHiC") %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5) +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ cluster_ID) +
+  coord_cartesian(ylim = c(0,10)) +
+  ggtitle("DNMT WT CHiC") +
+  theme(legend.position = "none", axis.title.x = element_blank(), plot.title = element_text(size = 14, hjust = 0.5))
+```
+Exporting
+
+```{r}
+ggsave("../output/plots/ES_to_Epi/DNMT_ES_to_Epi_CHiC.png", width = 20, height = 3, units = "in")
+ggsave("../output/plots/ES_to_Epi/DNMT_ES_to_Epi_CHiC.svg", width = 20, height = 3, units = "in")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

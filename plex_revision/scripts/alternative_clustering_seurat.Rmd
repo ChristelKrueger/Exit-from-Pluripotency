@@ -75,6 +75,8 @@ DimPlot(marks_PCA, reduction = "pca", raster = FALSE)
 ```{r}
 #DimHeatmap(marks_PCA, dims = 1:5, balanced = TRUE)
 ```
+
+
 ```{r}
 ElbowPlot(marks_PCA)
 ```
@@ -228,7 +230,7 @@ marks_2 %>%
   ggtitle("EM clusters") +
   coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
   scale_colour_manual(values = cluster_group_colours) +
-  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5)) 
 ```
 
 
@@ -264,7 +266,7 @@ marks_2 %>%
 
 Plotting Louvain summarised marks
 
-```{r}
+```{r, fig.width=8, fig.height = 4}
 marks_3 %>% 
   slice_sample(prop = 0.05) %>% 
   ggplot(aes(UMAP1, UMAP2, colour = Louvain_cluster_group)) +
@@ -273,8 +275,18 @@ marks_3 %>%
   ggtitle("Louvain clusters") +
   coord_cartesian(xlim = c(-10, 12), ylim = c(-10, 8)) +
   scale_colour_manual(values = cluster_group_colours) +
-  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5))
+  theme(aspect.ratio = 1, plot.title = element_text(hjust = 0.5), legend.title = element_blank()) -> UMAP_Louvain_clusters
+
+UMAP_Louvain_clusters
 ```
+Exporting
+
+```{r}
+ggsave("../output/plots/UMAP_Louvain_clusters.png", UMAP_Louvain_clusters, height = 4, width = 8, units = "in")
+ggsave("../output/plots/UMAP_Louvain_clusters.svg", UMAP_Louvain_clusters, height = 4, width = 8, units = "in")
+```
+
+
 
 Some clusters are strong and essentially pop up in all cluster conditions:
 
@@ -283,4 +295,13 @@ Some clusters are strong and essentially pop up in all cluster conditions:
 - inactive P - CTCF
 - active P - active P, although this one mixes easily with the active P active E cluster despite being quite defined on the UMAP
 - we then have the various clusters that form the 'body' of the UMAP which aren't clearly defined. They have various levels of K27ac at P and PIR and are therefore labelled as low primed enhancers, active enhancers, active and inactive promoters. Maybe we should be clearer about this in the text.
+
+Exporting the clusters
+
+```{r}
+marks_2 %>% 
+  select(interaction_ID, Louvain_cluster_ID) %>% 
+  write_tsv("../output/tables/Louvain_cluster_assignment.tsv")
+```
+
 

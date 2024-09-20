@@ -141,7 +141,7 @@ Plotting the WT Epi marks (as examples to play around with)
 ```{r}
 umap_20_Epi_WT %>% 
   sample_n(size = 10000) %>% 
-  ggplot(aes(V1, V2, colour = bait_hmC_TET_WT_Epi)) +
+  ggplot(aes(UMAP1, UMAP2, colour = P_hmC_TET_WT_EpiLC_D2)) +
   geom_point(size = 0.8) + 
   theme(aspect.ratio = 1) +
   scale_colour_viridis_c(option  = "turbo") +
@@ -162,7 +162,7 @@ export_plot <- function(colour_mark){
   
   umap_20_Epi_WT %>%
   sample_n(size = 10000) %>%
-  ggplot(aes(V1, V2, colour = .data[[colour_mark]])) +
+  ggplot(aes(UMAP1, UMAP2, colour = .data[[colour_mark]])) +
   geom_point(size = 0.4) +
   theme(aspect.ratio = 1) +
   scale_colour_viridis_c(option  = "turbo") +
@@ -181,10 +181,10 @@ exporting all these plots
 
 ```{r}
 umap_20_Epi_WT %>% 
-  select(8:41) %>% 
+  select(11:41) %>% 
   colnames() -> colour_mark
 
-#sapply(colour_mark, function(x) export_plot(x))
+sapply(colour_mark, function(x) export_plot(x))
 
 ```
 

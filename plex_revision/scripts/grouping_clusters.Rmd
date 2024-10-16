@@ -179,10 +179,10 @@ PIR_marks_plot_Louvain
 Exporting
 
 ```{r}
-ggsave(filename = "../output/plots/P_marks_plot_EM.png", P_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
-ggsave(filename = "../output/plots/PIR_marks_plot_EM.png", PIR_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
-ggsave(filename = "../output/plots/P_marks_plot_Louvain.png", P_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
-ggsave(filename = "../output/plots/PIR_marks_plot_Louvain.png", PIR_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
+# ggsave(filename = "../output/plots/P_marks_plot_EM.png", P_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
+# ggsave(filename = "../output/plots/PIR_marks_plot_EM.png", PIR_marks_plot_EM, width = 8, height = 10, units = "in", device = "png")
+# ggsave(filename = "../output/plots/P_marks_plot_Louvain.png", P_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
+# ggsave(filename = "../output/plots/PIR_marks_plot_Louvain.png", PIR_marks_plot_Louvain, width = 8, height = 10, units = "in", device = "png")
 ```
 
 Soo .... I stared long and hard at these boxplots (again) and think we should make the following groupings. It's quite nice to see that EM and Louvain clustering come out relatively similar.
@@ -317,8 +317,8 @@ UMAP_EM_clusters
 Exporting
 
 ```{r}
-ggsave("../output/plots/UMAP_EM_clusters.png", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
-ggsave("../output/plots/UMAP_EM_clusters.svg", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
+# ggsave("../output/plots/UMAP_EM_clusters.png", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
+# ggsave("../output/plots/UMAP_EM_clusters.svg", UMAP_EM_clusters, width = 8, height = 4, unit = "in")
 ```
 
 
@@ -342,8 +342,8 @@ UMAP_Louvain_clusters
 Exporting
 
 ```{r}
-ggsave("../output/plots/UMAP_Louvain_clusters.png", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
-ggsave("../output/plots/UMAP_Louvain_clusters.svg", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
+# ggsave("../output/plots/UMAP_Louvain_clusters.png", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
+# ggsave("../output/plots/UMAP_Louvain_clusters.svg", UMAP_Louvain_clusters, width = 8, height = 4, unit = "in")
 ```
 
 
@@ -358,7 +358,9 @@ read_tsv("../data/pluripotency_exit_RNA_Epi_and_EB_log2RPKM.txt") -> expression_
 
 expression_import %>% 
   select(Probe, DNMT_WT_ES:last_col()) %>% 
-  rename_with(~gsub("_ES", "_ES_0",.)) %>% 
+  rename_with(~gsub("_ES", "_ES_D0",.)) %>% 
+  rename_with(~gsub("Epi_", "EpiLC_D",.)) %>% 
+  rename_with(~gsub("EB_", "EB_D",.)) %>% 
   rename_with(~paste0("RNA_", .)) %>% 
   rename(Probe = RNA_Probe) %>% 
   distinct(Probe, .keep_all = TRUE) -> expression

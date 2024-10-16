@@ -1,0 +1,120 @@
+---
+title: "Figure 3: enhancer marks in KOs"
+output: html_notebook
+---
+
+This script will create the panels of Figure 3 of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+```
+
+
+## Marks at active enhancers
+
+### EM clusters
+
+#### Plotting marks at active enhancers
+
+Filtering the magic table for relevant values and calculating KO to WT difference
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, contains("EpiLC_D2"), -starts_with("P_"), -starts_with("CHiC"), -contains("mC_"), -contains("ATAC"),
+         -contains("CTCF"), -contains("H3K27me3"), -contains("H3K4me3"), -contains("Input")) %>% 
+  pivot_longer(2:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  mutate(sample = gsub("RNA", "PIR_RNA", sample)) %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-fragment, -stage, -day) %>% 
+  pivot_wider(names_from = genotype, values_from = log2RPKM) %>% 
+  mutate(KO_WT_diff = KO - WT)-> enhancer_marks_EM
+
+head(enhancer_marks_EM)
+```
+
+
+
+Plotting Figure 3a (EM clusters)
+
+```{r, fig.height=4.5, fig.width=5}
+enhancer_marks_EM %>% 
+  mutate(line = gsub("DNMT", "Dnmt TKO - WT", line)) %>% 
+  mutate(line = gsub("TET", "Tet TKO - WT", line)) %>% 
+  mutate(mark = gsub("RNA", "mRNA expression", mark)) %>% 
+  ggplot(aes(KO_WT_diff, colour = mark)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  geom_density() +
+  xlim(-5, 5) +
+  scale_colour_manual(values = c(K27ac_colour, K4me1_colour, exp_colour)) +
+  xlab("Difference (log2 RPKM)") +
+  ggtitle("EM clusters") +
+  facet_wrap(facets = "line") +
+  theme(legend.title = element_blank(), strip.background = element_rect(fill = "white"), legend.position = "inside", 
+        legend.position.inside = c(0.755, 0.82), legend.text = element_text(size = 12), legend.box.background = element_rect(colour = "black"),
+        panel.grid = element_blank(), plot.title = element_text(size = 14, hjust = 0.5)) -> figure3a_EM
+
+figure3a_EM
+```
+
+### Louvain clusters
+
+#### Plotting marks at active enhancers
+
+Filtering the magic table for relevant values and calculating KO to WT difference
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, contains("EpiLC_D2"), -starts_with("P_"), -starts_with("CHiC"), -contains("mC_"), -contains("ATAC"),
+         -contains("CTCF"), -contains("H3K27me3"), -contains("H3K4me3"), -contains("Input")) %>% 
+  pivot_longer(2:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  mutate(sample = gsub("RNA", "PIR_RNA", sample)) %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-fragment, -stage, -day) %>% 
+  pivot_wider(names_from = genotype, values_from = log2RPKM) %>% 
+  mutate(KO_WT_diff = KO - WT)-> enhancer_marks_Louvain
+
+head(enhancer_marks_Louvain)
+```
+
+Plotting Figure 3a (Louvain clusters)
+
+```{r, fig.height=4.5, fig.width=5}
+enhancer_marks_Louvain %>% 
+  mutate(line = gsub("DNMT", "Dnmt TKO - WT", line)) %>% 
+  mutate(line = gsub("TET", "Tet TKO - WT", line)) %>% 
+  mutate(mark = gsub("RNA", "mRNA expression", mark)) %>% 
+  ggplot(aes(KO_WT_diff, colour = mark)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  geom_density() +
+  xlim(-5, 5) +
+  scale_colour_manual(values = c(K27ac_colour, K4me1_colour, exp_colour)) +
+  xlab("Difference (log2 RPKM)") +
+  ggtitle("Louvain clusters") +
+  facet_wrap(facets = "line") +
+  theme(legend.title = element_blank(), strip.background = element_rect(fill = "white"), legend.position = "inside", 
+        legend.position.inside = c(0.755, 0.82), legend.text = element_text(size = 12), legend.box.background = element_rect(colour = "black"),
+        panel.grid = element_blank(), plot.title = element_text(size = 14, hjust = 0.5)) -> figure3a_Louvain
+
+figure3a_Louvain
+```
+
+Exporting plots
+
+```{r}
+ggsave("../output/plots/Figure3a_EM.svg",  figure3a_EM, width = 5, height = 4.5, units = "in")
+ggsave("../output/plots/Figure3a_EM.png",  figure3a_EM, width = 5, height = 4.5, units = "in")
+ggsave("../output/plots/Figure3a_Louvain.svg",  figure3a_Louvain, width = 5, height = 4.5, units = "in")
+ggsave("../output/plots/Figure3a_Louvain.png",  figure3a_Louvain, width = 5, height = 4.5, units = "in")
+```
+
+
+

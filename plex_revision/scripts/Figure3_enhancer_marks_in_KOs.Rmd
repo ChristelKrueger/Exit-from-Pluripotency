@@ -21,7 +21,7 @@ read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
 
 ### EM clusters
 
-#### Plotting marks at active enhancers
+#### Figure 3a
 
 Filtering the magic table for relevant values and calculating KO to WT difference
 
@@ -66,7 +66,7 @@ figure3a_EM
 
 ### Louvain clusters
 
-#### Plotting marks at active enhancers
+#### Figure 3a
 
 Filtering the magic table for relevant values and calculating KO to WT difference
 
@@ -116,5 +116,301 @@ ggsave("../output/plots/Figure3a_Louvain.svg",  figure3a_Louvain, width = 5, hei
 ggsave("../output/plots/Figure3a_Louvain.png",  figure3a_Louvain, width = 5, height = 4.5, units = "in")
 ```
 
+Moving on to Figure 3c
 
+## H3K4me1 marks at promoter - enhancer pairs
 
+### EM clusters
+
+### primed, active and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "inactive P - primed E" | EM_cluster_group == "active P - active E" | EM_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, EM_cluster_group, contains("H3K4me1")) %>% 
+  select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K4me1_enhancers_EM
+
+head(K4me1_enhancers_EM)
+```
+
+Plotting H3K4me1 for enhancer types - EM clusters
+
+```{r, fig.width=3.5, fig.height=4}
+K4me1_enhancers_EM %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "inactive P - primed E" ~ "Primed E",
+                                      EM_cluster_group == "active P - active E" ~ "Active E",
+                                      EM_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("EM clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K4me1_enhancer_violins_EM
+
+K4me1_enhancer_violins_EM
+```
+### Louvain clusters
+
+### primed, active and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "inactive P - primed E" | Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("H3K4me1")) %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K4me1_enhancers_Louvain
+
+head(K4me1_enhancers_Louvain)
+```
+Plotting H3K4me1 for enhancer types - Louvain clusters
+
+```{r, fig.width=3.5, fig.height=4}
+K4me1_enhancers_Louvain %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "inactive P - primed E" ~ "Primed E",
+                                      Louvain_cluster_group == "active P - active E" ~ "Active E",
+                                      Louvain_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("Louvain clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K4me1_enhancer_violins_Louvain
+
+K4me1_enhancer_violins_Louvain
+```
+Exporting H3K4me1 plots
+
+```{r}
+ggsave("../output/plots/Figure3c_EM.png", K4me1_enhancer_violins_EM, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3c_EM.svg", K4me1_enhancer_violins_EM, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3c_Louvain.png", K4me1_enhancer_violins_Louvain, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3c_Louvain.svg", K4me1_enhancer_violins_Louvain, width = 3.5, height = 4, units = "in")
+```
+
+## H3K27ac marks at promoter - enhancer pairs
+
+### EM clusters
+
+### primed, active and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "inactive P - primed E" | EM_cluster_group == "active P - active E" | EM_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, EM_cluster_group, contains("H3K27ac")) %>% 
+  select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K27ac_enhancers_EM
+
+head(K27ac_enhancers_EM)
+```
+
+Plotting H3K27ac for enhancer types - EM clusters
+
+```{r, fig.width=3.5, fig.height=4}
+K27ac_enhancers_EM %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "inactive P - primed E" ~ "Primed E",
+                                      EM_cluster_group == "active P - active E" ~ "Active E",
+                                      EM_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("EM clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K27ac_enhancer_violins_EM
+
+K27ac_enhancer_violins_EM
+```
+
+### Louvain clusters
+
+### primed, active and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "inactive P - primed E" | Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("H3K27ac")) %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K27ac_enhancers_Louvain
+
+head(K27ac_enhancers_Louvain)
+```
+
+Plotting H3K27ac for enhancer types - Louvain clusters
+
+```{r, fig.width=3.5, fig.height=4}
+K27ac_enhancers_Louvain %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "inactive P - primed E" ~ "Primed E",
+                                      Louvain_cluster_group == "active P - active E" ~ "Active E",
+                                      Louvain_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("Louvain clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K27ac_enhancer_violins_Louvain
+
+K27ac_enhancer_violins_Louvain
+```
+
+Exporting H3K27ac plots
+
+```{r}
+ggsave("../output/plots/Figure3d_EM.png", K27ac_enhancer_violins_EM, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3d_EM.svg", K27ac_enhancer_violins_EM, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3d_Louvain.png", K27ac_enhancer_violins_Louvain, width = 3.5, height = 4, units = "in")
+ggsave("../output/plots/Figure3d_Louvain.svg", K27ac_enhancer_violins_Louvain, width = 3.5, height = 4, units = "in")
+```
+
+## H3K27me3 marks at promoter - PIR pairs
+
+### EM clusters
+
+### polycomb promoters and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, EM_cluster_group, contains("H3K27me3")) %>% 
+  select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K27me3_enhancers_EM
+
+head(K27me3_enhancers_EM)
+```
+
+Plotting H3K27me3 for PIR types - EM clusters
+
+```{r, fig.width=2.7, fig.height=4}
+K27me3_enhancers_EM %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "polycomb P - unmarked PIR" ~ "Polycomb P",
+                                      EM_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Polycomb P", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("EM clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K27me3_enhancer_violins_EM
+
+K27me3_enhancer_violins_EM
+```
+### Louvain clusters
+
+### polycomb promoters and poised enhancers
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("H3K27me3")) %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> K27me3_enhancers_Louvain
+
+head(K27me3_enhancers_Louvain)
+```
+
+Plotting H3K27me3 for PIR types - Louvain clusters
+
+```{r, fig.width=2.7, fig.height=4}
+K27me3_enhancers_Louvain %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "polycomb P - unmarked PIR" ~ "Polycomb P",
+                                      Louvain_cluster_group == "bivalent P - poised E" ~ "Poised E")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Polycomb P", "Poised E"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("Louvain clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> K27me3_enhancer_violins_Louvain
+
+K27me3_enhancer_violins_Louvain
+```
+
+Exporting H3K27me3 plots
+
+```{r}
+ggsave("../output/plots/Figure3e_EM.png", K27me3_enhancer_violins_EM, width = 2.7, height = 4, units = "in")
+ggsave("../output/plots/Figure3e_EM.svg", K27me3_enhancer_violins_EM, width = 2.7, height = 4, units = "in")
+ggsave("../output/plots/Figure3e_Louvain.png", K27me3_enhancer_violins_Louvain, width = 2.7, height = 4, units = "in")
+ggsave("../output/plots/Figure3e_Louvain.svg", K27me3_enhancer_violins_Louvain, width = 2.7, height = 4, units = "in")
+```

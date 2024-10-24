@@ -1,0 +1,402 @@
+---
+title: "Suppl Figure 4 - ES to Epi transition"
+output: html_notebook
+---
+
+This script will create the panels of Supplemental Figure 4c - h of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+```
+
+# ES to EpiLC transition (TET) - EM - clustering
+
+
+as per the new clustering we are now looking for cluster groups
+polycomb P - unmarked PIR
+bivalent P - poised E
+active P - active E
+inactive P - primed E
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E" |
+           EM_cluster_group == "active P - active E" | EM_cluster_group == "inactive P - primed E") %>% 
+  select(interaction_ID, EM_cluster_group, contains("WT"), -contains("DNMT"), -contains("Input"), -contains("ATAC"), -contains("CTCF"), 
+         -contains("mC"), -contains("RNA"), -contains("H3K4me3")) %>% 
+  rename_with(~gsub("CHiC", "P_CHiC", .)) %>% 
+  pivot_longer(3:last_col(), names_to = "sample") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-line, -genotype, -day) -> SuppFigure4_EM
+
+head(SuppFigure4_EM)
+```
+
+## Supp Figure 4c (H3K27me3) - EM-clustering
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "H3K27me3") %>% 
+  filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       EM_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K27me3 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4c_EM
+
+SuppFigure4c_EM
+```
+
+
+## Supp Figure 4d (H3K4me1)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "H3K4me1") %>% 
+  filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       EM_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K4me1 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4d_EM
+
+SuppFigure4d_EM
+```
+## supp figure 4e 
+
+```{r, fig.height=2.5, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "CHiC") %>% 
+  filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       EM_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("HiC (CHiCAGO)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4e_EM
+
+SuppFigure4e_EM
+```
+## Supp Figure 4f (H3K4me1)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "H3K4me1") %>% 
+  filter(EM_cluster_group == "active P - active E" | EM_cluster_group == "inactive P - primed E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "active P - active E" ~ "Active",
+                                       EM_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K4me1 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4f_EM
+
+SuppFigure4f_EM
+```
+
+## Supp Figure 4g (H3K27ac)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "H3K27ac") %>% 
+  filter(EM_cluster_group == "active P - active E" | EM_cluster_group == "inactive P - primed E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "active P - active E" ~ "Active",
+                                       EM_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K27ac (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4g_EM
+
+SuppFigure4g_EM
+```
+
+## supp figure 4h 
+
+```{r, fig.height=2.5, fig.width=2.1}
+SuppFigure4_EM %>% 
+  filter(mark == "CHiC") %>% 
+  filter(EM_cluster_group == "active P - active E" | EM_cluster_group == "inactive P - primed E") %>% 
+  mutate(EM_cluster_group = case_when(EM_cluster_group == "active P - active E" ~ "Active",
+                                       EM_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("HiC (CHiCAGO)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ EM_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4h_EM
+
+SuppFigure4h_EM
+```
+ 
+## Exporting the EM supp fig 4 plots
+
+```{r}
+ggsave("../output/plots/SuppFigure4c_EM.png", SuppFigure4c_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4c_EM.svg", SuppFigure4c_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4d_EM.png", SuppFigure4d_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4d_EM.svg", SuppFigure4d_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4f_EM.png", SuppFigure4f_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4f_EM.svg", SuppFigure4f_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4g_EM.png", SuppFigure4g_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4g_EM.svg", SuppFigure4g_EM, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4e_EM.png", SuppFigure4e_EM, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4e_EM.svg", SuppFigure4e_EM, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4h_EM.png", SuppFigure4h_EM, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4h_EM.svg", SuppFigure4h_EM, width = 2.1, height = 2.5, units = "in")
+```
+
+ 
+
+# ES to EpiLC transition (TET) - Louvain - clustering
+
+
+as per the new clustering we are now looking for cluster groups
+polycomb P - unmarked PIR
+bivalent P - poised E
+active P - active E
+inactive P - primed E
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E" |
+           Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "inactive P - primed E") %>% 
+  select(interaction_ID, Louvain_cluster_group, contains("WT"), -contains("DNMT"), -contains("Input"), -contains("ATAC"), -contains("CTCF"), 
+         -contains("mC"), -contains("RNA"), -contains("H3K4me3")) %>% 
+  rename_with(~gsub("CHiC", "P_CHiC", .)) %>% 
+  pivot_longer(3:last_col(), names_to = "sample") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-line, -genotype, -day) -> SuppFigure4_Louvain
+
+head(SuppFigure4_Louvain)
+```
+
+## Supp Figure 4c (H3K27me3) - Louvain-clustering
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "H3K27me3") %>% 
+  filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       Louvain_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K27me3 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4c_Louvain
+
+SuppFigure4c_Louvain
+```
+
+
+## Supp Figure 4d (H3K4me1)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "H3K4me1") %>% 
+  filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       Louvain_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K4me1 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4d_Louvain
+
+SuppFigure4d_Louvain
+```
+## supp figure 4e 
+
+```{r, fig.height=2.5, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "CHiC") %>% 
+  filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "polycomb P - unmarked PIR" ~ "Repressed",
+                                       Louvain_cluster_group == "bivalent P - poised E" ~ "Poised")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Repressed", "Poised"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("HiC (CHiCAGO)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4e_Louvain
+
+SuppFigure4e_Louvain
+```
+## Supp Figure 4f (H3K4me1)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "H3K4me1") %>% 
+  filter(Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "inactive P - primed E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "active P - active E" ~ "Active",
+                                       Louvain_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K4me1 (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4f_Louvain
+
+SuppFigure4f_Louvain
+```
+
+## Supp Figure 4g (H3K27ac)
+
+```{r, fig.height=4, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "H3K27ac") %>% 
+  filter(Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "inactive P - primed E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "active P - active E" ~ "Active",
+                                       Louvain_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("H3K27ac (log2 RPKM)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4g_Louvain
+
+SuppFigure4g_Louvain
+```
+
+## supp figure 4h 
+
+```{r, fig.height=2.5, fig.width=2.1}
+SuppFigure4_Louvain %>% 
+  filter(mark == "CHiC") %>% 
+  filter(Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "inactive P - primed E") %>% 
+  mutate(Louvain_cluster_group = case_when(Louvain_cluster_group == "active P - active E" ~ "Active",
+                                       Louvain_cluster_group == "inactive P - primed E" ~ "Primed")) %>% 
+  mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed", "Active"))) %>% 
+  mutate(stage = gsub("ES", "ESC", stage)) %>% 
+  mutate(stage = factor(stage, levels = c("ESC", "EpiLC"))) %>% 
+  ggplot(aes(stage, value, fill = stage)) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ylim(0,10) +
+  ggtitle("HiC (CHiCAGO)") +
+  scale_fill_manual(values = c(ES_colour, Epi_colour)) +
+  facet_grid(fragment ~ Louvain_cluster_group) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.text.y = element_blank(), strip.background = element_rect(fill = "white", colour = NA), 
+        axis.ticks.x = element_blank(), strip.text = element_text(size = 8), axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 8), plot.title = element_text(size = 8, hjust = 0.5, vjust = -4)) -> SuppFigure4h_Louvain
+
+SuppFigure4h_Louvain
+```
+
+## Exporting the Louvain supp fig 4 plots
+
+```{r}
+ggsave("../output/plots/SuppFigure4c_Louvain.png", SuppFigure4c_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4c_Louvain.svg", SuppFigure4c_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4d_Louvain.png", SuppFigure4d_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4d_Louvain.svg", SuppFigure4d_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4f_Louvain.png", SuppFigure4f_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4f_Louvain.svg", SuppFigure4f_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4g_Louvain.png", SuppFigure4g_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4g_Louvain.svg", SuppFigure4g_Louvain, width = 2.1, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure4e_Louvain.png", SuppFigure4e_Louvain, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4e_Louvain.svg", SuppFigure4e_Louvain, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4h_Louvain.png", SuppFigure4h_Louvain, width = 2.1, height = 2.5, units = "in")
+ggsave("../output/plots/SuppFigure4h_Louvain.svg", SuppFigure4h_Louvain, width = 2.1, height = 2.5, units = "in")
+```
+
+
+
+
+

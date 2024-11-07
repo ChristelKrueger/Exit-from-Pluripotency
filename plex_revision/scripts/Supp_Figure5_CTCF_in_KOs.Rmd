@@ -1,0 +1,125 @@
+---
+title: "Figure 3: enhancer marks in KOs"
+output: html_notebook
+---
+
+This script will create Supplemental Figure 5e of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+```
+
+
+## CTCF 
+
+### EM clusters
+
+#### cluster 10 and 19
+
+This is the so far the only figure in which we use individual clusters instead of cluster groups. Reason is that cluster 10 was grouped with other active P - lowmarked PIR clusters so CTCF changes would be diluted.
+
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_ID == 10 | EM_cluster_ID == 19) %>% 
+  select(interaction_ID, EM_cluster_ID, contains("CTCF")) %>% 
+  select(interaction_ID, EM_cluster_ID, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) -> CTCF_EM
+
+head(CTCF_EM)
+```
+
+Plotting CTCF for cluster 10 and 19 - EM clusters
+
+```{r, fig.width=2.8, fig.height=4}
+CTCF_EM %>% 
+  mutate(EM_cluster_ID = case_when(EM_cluster_ID == 10 ~ "cluster 10",
+                                      EM_cluster_ID == 19 ~ "cluster 19")) %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("EM clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ EM_cluster_ID) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> CTCF_violins_EM
+
+CTCF_violins_EM
+```
+ 
+### Louvain clusters
+
+#### cluster 1 and 19, cluster 15
+
+This is the so far the only figure in which we use individual clusters instead of cluster groups. Reason is that cluster 15 was grouped with other active P - lowmarked PIR clusters so CTCF changes would be diluted.
+
+
+Filtering the magic table for these categories
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_ID == 1 | Louvain_cluster_ID == 19 | Louvain_cluster_ID == 15) %>% 
+  select(interaction_ID, Louvain_cluster_ID, contains("CTCF")) %>% 
+  select(interaction_ID, Louvain_cluster_ID, contains("EpiLC_D2")) %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
+  select(-mark, -stage, -day) %>% 
+  mutate(Louvain_cluster_ID = case_when(Louvain_cluster_ID == 1 ~ "cluster 1/19",
+                                        Louvain_cluster_ID == 19 ~ "cluster 1/19",
+                                        Louvain_cluster_ID == 15 ~ "cluster 15")) %>% 
+  mutate(Louvain_cluster_ID = factor(Louvain_cluster_ID, levels = c("cluster 15", "cluster 1/19"))) -> CTCF_Louvain
+
+head(CTCF_Louvain)
+```
+
+Plotting CTCF for cluster 1 and 19, cluster 15 - Louvain clusters
+
+```{r, fig.width=2.8, fig.height=4}
+CTCF_Louvain %>% 
+  mutate(line = case_when(line == "DNMT" ~ "Dnmt",
+                          line == "TET" ~ "Tet")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
+  unite(line, genotype, col = "condition", sep = " ") %>% 
+  mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
+  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ylim(0,10) +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
+  ggtitle("Louvain clustering") +
+  scale_fill_manual(values = c(DNMT_Epi_WT_colour, DNMT_Epi_KO_colour, TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  scale_x_discrete(drop=FALSE) +
+  facet_grid(fragment ~ Louvain_cluster_ID) +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10, margin = margin(r=0)), 
+        panel.grid = element_blank(), strip.background = element_rect(fill = "white"), axis.ticks.x = element_blank(), strip.text = element_text(size = 9),
+        axis.title.y = element_text(size = 12), axis.text.y = element_text(size = 10), plot.title = element_text(size = 12, hjust = 0.5)) -> CTCF_violins_Louvain
+
+CTCF_violins_Louvain
+```
+
+ 
+Exporting
+
+```{r}
+ggsave("../output/plots/SuppFigure5e_EM.png", CTCF_violins_EM, width = 2.8, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure5e_EM.svg", CTCF_violins_EM, width = 2.8, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure5e_Louvain.png", CTCF_violins_Louvain, width = 2.8, height = 4, units = "in")
+ggsave("../output/plots/SuppFigure5e_Louvain.svg", CTCF_violins_Louvain, width = 2.8, height = 4, units = "in")
+```
+

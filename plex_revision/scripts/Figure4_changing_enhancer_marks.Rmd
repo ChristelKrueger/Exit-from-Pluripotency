@@ -1,0 +1,220 @@
+---
+title: "Figure 4: change in enhancer marks in KOs"
+output: html_notebook
+---
+
+This script will create Figure 4d and e of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+read_tsv("../data/Annotated Probe Report for DE DNMT Epi WT vs KO no MTC.txt") -> DNMT_WT_vs_KO_import
+read_tsv("../data/Annotated Probe Report for DE TET Epi WT vs KO no MTC.txt") -> TET_WT_vs_KO_import
+```
+Tidying
+
+```{r}
+DNMT_WT_vs_KO_import %>% 
+  select(Probe, DNMT_WT_Epi_2, DNMT_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  mutate(diff_exp = if_else(DNMT_KO_Epi_2 > DNMT_WT_Epi_2, "upregulated", "downregulated")) %>% 
+  select(Probe, diff_exp) -> DNMT_diff_genes
+
+TET_WT_vs_KO_import %>% 
+  select(Probe, TET_WT_Epi_2, TET_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  mutate(diff_exp = if_else(TET_KO_Epi_2 > TET_WT_Epi_2, "upregulated", "downregulated")) %>% 
+  select(Probe, diff_exp) -> TET_diff_genes
+```
+
+
+### EM clusters
+
+Filtering for active enhancers and merging with diff genes - EM
+
+selecting
+- cluster group active P - active E
+- RNA EpiLC D2 TET WT and KO
+- PIR K27ac and K4me1 marks for TET WT and KO
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  left_join(TET_diff_genes, by = c("P_gene" = "Probe")) %>% 
+  select(interaction_ID, PIR_H3K27ac_TET_WT_EpiLC_D2, PIR_H3K27ac_TET_KO_EpiLC_D2, PIR_H3K4me1_TET_WT_EpiLC_D2, PIR_H3K4me1_TET_KO_EpiLC_D2, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2, diff_exp) %>% 
+  mutate(K27ac_diff = PIR_H3K27ac_TET_KO_EpiLC_D2 - PIR_H3K27ac_TET_WT_EpiLC_D2,
+         K4me1_diff = PIR_H3K4me1_TET_KO_EpiLC_D2 - PIR_H3K4me1_TET_WT_EpiLC_D2,
+         RNA_diff = RNA_TET_KO_EpiLC_D2 - RNA_TET_WT_EpiLC_D2) %>% 
+  filter(!is.na(RNA_TET_WT_EpiLC_D2)) -> fig4de_data_EM
+
+fig4de_data_EM
+```
+Plotting Figure 4d left panel
+
+```{r, fig.height=4, fig.width=4}
+fig4de_data_EM %>% 
+  ggplot(aes (K27ac_diff, RNA_diff), colour = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  geom_point(data = fig4de_data_EM %>% filter(diff_exp == "upregulated"), colour = up_colour, size = 0.7) +
+  geom_point(data = fig4de_data_EM %>% filter(diff_exp == "downregulated"), colour = down_colour, size = 0.7) +
+  ggtitle("EM active P - active E clusters") +
+  xlab("Difference in enhancer H3K27ac\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10)) -> left_panel_EM
+  
+  left_panel_EM
+```
+Plotting Figure 4d right panel
+
+```{r, fig.height=4, fig.width=4}
+fig4de_data_EM %>% 
+  ggplot(aes (K4me1_diff, RNA_diff), colour = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  geom_point(data = fig4de_data_EM %>% filter(diff_exp == "upregulated"), colour = up_colour, size = 0.7) +
+  geom_point(data = fig4de_data_EM %>% filter(diff_exp == "downregulated"), colour = down_colour, size = 0.7) +
+  ggtitle("EM active P - active E clusters") +
+  xlab("Difference in enhancer H3K4me1\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10)) -> right_panel_EM
+  
+  right_panel_EM
+```
+
+Plotting Figure 4e
+
+```{r, fig.height=4, fig.width=6}
+fig4de_data_EM %>% 
+  ggplot(aes (K4me1_diff, RNA_diff, colour = RNA_TET_WT_EpiLC_D2)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  ggtitle("EM active P - active E clusters") +
+  xlab("Difference in enhancer H3K4me1\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  scale_colour_viridis_c() +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10),
+        legend.title = element_blank()) -> fig4e_EM
+  
+  fig4e_EM
+```
+
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4d_left_EM.png", left_panel_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_left_EM.svg", left_panel_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_right_EM.png", right_panel_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_right_EM.svg", right_panel_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4e_EM.png", fig4e_EM, width = 6, height = 4, units = "in")
+ggsave("../output/plots/Figure4e_EM.svg", fig4e_EM, width = 6, height = 4, units = "in")
+```
+
+### Louvain clusters
+
+Filtering for active enhancers and merging with diff genes - Louvain
+
+selecting
+- cluster group active P - active E
+- RNA EpiLC D2 TET WT and KO
+- PIR K27ac and K4me1 marks for TET WT and KO
+
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  left_join(TET_diff_genes, by = c("P_gene" = "Probe")) %>% 
+  select(interaction_ID, PIR_H3K27ac_TET_WT_EpiLC_D2, PIR_H3K27ac_TET_KO_EpiLC_D2, PIR_H3K4me1_TET_WT_EpiLC_D2, PIR_H3K4me1_TET_KO_EpiLC_D2, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2, diff_exp) %>% 
+  mutate(K27ac_diff = PIR_H3K27ac_TET_KO_EpiLC_D2 - PIR_H3K27ac_TET_WT_EpiLC_D2,
+         K4me1_diff = PIR_H3K4me1_TET_KO_EpiLC_D2 - PIR_H3K4me1_TET_WT_EpiLC_D2,
+         RNA_diff = RNA_TET_KO_EpiLC_D2 - RNA_TET_WT_EpiLC_D2) %>% 
+  filter(!is.na(RNA_TET_WT_EpiLC_D2)) -> fig4de_data_Louvain
+
+fig4de_data_Louvain
+```
+Plotting Figure 4d left panel
+
+```{r, fig.height=4, fig.width=4}
+fig4de_data_Louvain %>% 
+  ggplot(aes (K27ac_diff, RNA_diff), colour = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  geom_point(data = fig4de_data_Louvain %>% filter(diff_exp == "upregulated"), colour = up_colour, size = 0.7) +
+  geom_point(data = fig4de_data_Louvain %>% filter(diff_exp == "downregulated"), colour = down_colour, size = 0.7) +
+  ggtitle("Louvain active P - active E clusters") +
+  xlab("Difference in enhancer H3K27ac\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10)) -> left_panel_Louvain
+  
+  left_panel_Louvain
+```
+
+Plotting Figure 4d right panel
+
+```{r, fig.height=4, fig.width=4}
+fig4de_data_Louvain %>% 
+  ggplot(aes (K4me1_diff, RNA_diff), colour = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  geom_point(data = fig4de_data_Louvain %>% filter(diff_exp == "upregulated"), colour = up_colour, size = 0.7) +
+  geom_point(data = fig4de_data_Louvain %>% filter(diff_exp == "downregulated"), colour = down_colour, size = 0.7) +
+  ggtitle("Louvain active P - active E clusters") +
+  xlab("Difference in enhancer H3K4me1\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10)) -> right_panel_Louvain
+  
+  right_panel_Louvain
+```
+
+Plotting Figure 4e
+
+```{r, fig.height=4, fig.width=6}
+fig4de_data_Louvain %>% 
+  ggplot(aes (K4me1_diff, RNA_diff, colour = RNA_TET_WT_EpiLC_D2)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point(size = 0.7) +
+  ggtitle("Louvain active P - active E clusters") +
+  xlab("Difference in enhancer H3K4me1\n(Tet TKO - Tet WT)") +
+  ylab("Difference in mRNA expression\n(Tet TKO - Tet WT)") +
+  scale_colour_viridis_c() +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(size = 10, hjust = 0.5),
+        axis.title = element_text(size = 10),
+        legend.title = element_blank()) -> fig4e_Louvain
+  
+  fig4e_Louvain
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4d_left_Louvain.png", left_panel_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_left_Louvain.svg", left_panel_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_right_Louvain.png", right_panel_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4d_right_Louvain.svg", right_panel_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4e_Louvain.png", fig4e_Louvain, width = 6, height = 4, units = "in")
+ggsave("../output/plots/Figure4e_Louvain.svg", fig4e_Louvain, width = 6, height = 4, units = "in")
+```

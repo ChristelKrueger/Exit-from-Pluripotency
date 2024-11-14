@@ -1,0 +1,61 @@
+---
+title: "Figure 4fgh and Supplemental Figure 4bcd: enhancer redundancy"
+output: html_notebook
+---
+
+This script will create Figure 4fgh and Supplemental Figure 4bcd of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
+
+Defining source
+
+```{r}
+source("cluster_analysis_functions.R")
+```
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+read_tsv("../data/Annotated Probe Report for DE DNMT Epi WT vs KO no MTC.txt") -> DNMT_WT_vs_KO_import
+read_tsv("../data/Annotated Probe Report for DE TET Epi WT vs KO no MTC.txt") -> TET_WT_vs_KO_import
+```
+Tidying
+
+```{r}
+DNMT_WT_vs_KO_import %>% 
+  select(Probe, DNMT_WT_Epi_2, DNMT_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  mutate(diff_exp = if_else(DNMT_KO_Epi_2 > DNMT_WT_Epi_2, "upregulated", "downregulated")) %>% 
+  select(Probe, diff_exp) -> DNMT_diff_genes
+
+TET_WT_vs_KO_import %>% 
+  select(Probe, TET_WT_Epi_2, TET_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  mutate(diff_exp = if_else(TET_KO_Epi_2 > TET_WT_Epi_2, "upregulated", "downregulated")) %>% 
+  select(Probe, diff_exp) -> TET_diff_genes
+```
+
+
+### EM clusters
+
+Filtering for active enhancers and merging with diff genes - EM
+
+selecting
+- cluster group active P - active E
+- RNA EpiLC D2 TET WT and KO
+- PIR K27ac and K4me1 marks for TET WT and KO
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  left_join(TET_diff_genes, by = c("P_gene" = "Probe")) %>% 
+  select(interaction_ID, PIR_H3K27ac_TET_WT_EpiLC_D2, PIR_H3K27ac_TET_KO_EpiLC_D2, PIR_H3K4me1_TET_WT_EpiLC_D2, PIR_H3K4me1_TET_KO_EpiLC_D2, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2, diff_exp) %>% 
+  mutate(K27ac_diff = PIR_H3K27ac_TET_KO_EpiLC_D2 - PIR_H3K27ac_TET_WT_EpiLC_D2,
+         K4me1_diff = PIR_H3K4me1_TET_KO_EpiLC_D2 - PIR_H3K4me1_TET_WT_EpiLC_D2,
+         RNA_diff = RNA_TET_KO_EpiLC_D2 - RNA_TET_WT_EpiLC_D2) %>% 
+  filter(!is.na(RNA_TET_WT_EpiLC_D2)) -> fig4de_data_EM
+
+fig4de_data_EM
+```
+
+
+
+

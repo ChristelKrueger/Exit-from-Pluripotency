@@ -1,15 +1,17 @@
 ---
-title: "Enhancer redundancy"
+title: "Enhancer redundancy - mark differences"
 output:
   html_document:
     df_print: paged
 ---
 
-This workbook is creating the heatmaps of ATAC differences for active enhancers looking at redundancy of elements. This uses the EM and Louvain clustering we have switched to during the paper revision.
+This workbook is creating the heatmaps of ATAC, H3K27ac and H3K4me1 differences for active enhancers looking at redundancy of elements. This uses the EM and Louvain clustering we have switched to during the paper revision.
+
+This script creates the heatmaps for Figure 4g and Supplemental Figure 6c and d in the revised manuscript.
 
 Starting with cluster group active P - active E (active promoter, active enhancer).
 Having two groups of genes, the ones that change expression (ie in the TET TKO WT comparison) and those that don't change expression.
-Explore in more detail the number of interactions, the number of changing enhancers and potentially other interactions that these genes form.
+
 
 Loading packages and options
 
@@ -25,7 +27,6 @@ Importing data
 
 ```{r}
 read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
-#read_tsv("../data/Annotated Probe Report for DE DNMT Epi WT vs KO no MTC.txt") -> DNMT_WT_vs_KO_import
 read_tsv("../data/Annotated Probe Report for DE TET Epi WT vs KO no MTC.txt") -> TET_WT_vs_KO_import
 ```
 
@@ -60,6 +61,7 @@ How many do we get for downregulated and stable?
 ```{r}
 activeE_groups_EM %>% 
   group_by(group) %>% 
+  distinct(P_gene, .keep_all = TRUE) %>% # we need this here because we have several interactions per gene
   count() -> groups_counted_EM
 
 groups_counted_EM
@@ -70,10 +72,11 @@ groups_counted_EM %>%
 ```
 
 
-I found that there are 405 interactions that involved TET KO down genes in this data frame and I want to have the same number of stable genes.
+I found that there are 405 interactions that involved a total of 145 TET KO down genes in this data frame and I want to have the same number of stable genes.
 
 ```{r}
 set.seed(6)
+
 activeE_groups_EM %>% 
   filter(group == "stable_genes") %>% 
   distinct(P_gene) %>% 
@@ -84,6 +87,7 @@ activeE_groups_EM %>%
 Now going back to the original magic table
 filtering for the active P - active E cluster group (EM)
 selecting relevant marks
+selecting stable and knocked down genes
 
 ```{r}
 magic_table_uncapped %>% 
@@ -91,130 +95,94 @@ magic_table_uncapped %>%
   select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2, PIR_ATAC_TET_WT_EpiLC_D2, PIR_ATAC_TET_KO_EpiLC_D2, PIR_H3K27ac_TET_WT_EpiLC_D2,
          PIR_H3K27ac_TET_KO_EpiLC_D2, PIR_H3K4me1_TET_WT_EpiLC_D2,
          PIR_H3K4me1_TET_KO_EpiLC_D2) %>% 
-  distinct(P_gene, .keep_all = TRUE) %>% 
-  drop_na() %>% 
   mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
                            P_gene %in% stable_genes_selected_EM ~ "stable")) %>% 
   filter(!is.na(group)) -> redundancy_plot_data_EM
 
 head(redundancy_plot_data_EM)
-redundancy_plot_data_EM %>% 
-  group_by(group) %>% 
-  count()
 ```
 
-
-
-
-
-
-
-Looking at ATAC differences between WT and KO
-
-```{r}
-cluster16_selected %>% 
-  mutate(keep = case_when(group == "TET_KO_genes" ~ "keep",
-                          bait_gene %in% stable_genes_135 ~ "keep",
-                          TRUE ~ "discard")) %>% 
-  filter(keep == "keep") %>% 
-  select(-interaction_ID) %>% 
-  mutate(ATAC_diff = oe_ATAC_TET_KO_Epi - oe_ATAC_TET_WT_Epi) %>% 
-  select(bait_gene, group, ATAC_diff) -> cluster16_ATAC
-
-head(cluster16_ATAC)
-```
-Double checking that it actually worked
-
-```{r}
-cluster16_ATAC %>% 
-  distinct(bait_gene,.keep_all = TRUE) %>% 
-  group_by(group) %>% 
-  count()
-```
-
-Aled had the idea of representing the enhancer changes as a heatmap
-Let's see what a change in ATAC does
 
 
 I need to substantially alter the shape of this dataframe. I want each enhancer per gene to be one column, and fill up the empty columns with NAs.
 
+### ATAC
 
 ```{r}
-cluster16_ATAC %>% 
-  group_by(bait_gene) %>% 
-  arrange(ATAC_diff, .by_group = TRUE) %>% 
+redundancy_plot_data_EM %>% 
+  select(P_gene, group, PIR_ATAC_TET_WT_EpiLC_D2) %>% 
+  group_by(P_gene) %>% 
+  arrange(desc(PIR_ATAC_TET_WT_EpiLC_D2), .by_group = TRUE) %>% 
   mutate(enhancer = row_number()) %>% 
   add_count() %>% 
-  pivot_wider(names_from = enhancer, values_from = ATAC_diff, values_fill = NA) -> cluster16_for_hm
+  pivot_wider(names_from = enhancer, values_from = PIR_ATAC_TET_WT_EpiLC_D2, values_fill = NA) -> ATAC_for_hm_EM
 
-head(cluster16_for_hm)
+head(ATAC_for_hm_EM)
 ```
 
-Preparing data the heatmap for stable
+Preparing data the heatmap for stable (EM)
 
 ```{r}
-cluster16_for_hm %>% 
-  filter(group == "stable_genes") %>% 
+ATAC_for_hm_EM %>% 
+  filter(group == "stable") %>% 
   arrange(desc(n)) %>% 
   select(-n) %>% 
-  select(bait_gene, 3:12) %>% 
+  select(P_gene, 3:12) %>% 
   as.data.frame() %>% 
-  column_to_rownames("bait_gene") -> heatmap.stable
+  column_to_rownames("P_gene") -> heatmap.stable.ATAC.EM
 
-head(heatmap.stable)
+head(heatmap.stable.ATAC.EM)
 ```
 
 
-Preparing data the heatmap for TET KO down
+Preparing data the heatmap for TET KO down (EM)
 
 ```{r}
-cluster16_for_hm %>% 
-  filter(group == "TET_KO_genes") %>% 
+ATAC_for_hm_EM %>% 
+  filter(group == "TET_KO_down") %>% 
   arrange(desc(n)) %>% 
   select(-n) %>% 
-  select(bait_gene, 3:12) %>% 
+  select(P_gene, 3:12) %>% 
   as.data.frame() %>% 
-  column_to_rownames("bait_gene") -> heatmap.down
+  column_to_rownames("P_gene") -> heatmap.down.ATAC.EM
 
-head(heatmap.down)
+head(heatmap.down.ATAC.EM)
 ```
 Drawing the heatmap for stable
 
 ```{r}
-pheatmap(heatmap.stable,
+pheatmap(heatmap.stable.ATAC.EM,
          cluster_rows = FALSE,
          cluster_cols = FALSE,
-         breaks = seq(-1.5, 0.5, length.out = 100),
-         color = colorRampPalette(rev(brewer.pal(3, "YlGnBu")))(99),
+         #breaks = seq(0.5, 1.5, length.out = 100),
+         color = colorRampPalette(brewer.pal(3, "YlOrRd"))(99),
          border_color = "#d4d4d4",
          na_col = "#f5f5f5",
          angle_col = 0,
-         main = "ATAC difference - stable genes",
-         show_rownames = FALSE) -> heatmap.stable.export
+         main = "ATAC TET WT EPI - stable genes",
+         show_rownames = FALSE) -> heatmap.stable.export.ATAC.EM
 
-ggsave("../output/plots/ATAC_diff_stable.png", heatmap.stable.export, width = 5, height = 7, units = "in")
+ggsave("../output/plots/SuppFigure6b_stable_EM.png", heatmap.stable.export.ATAC.EM, width = 5, height = 7, units = "in")
+ggsave("../output/plots/SuppFigure6b_stable_EM.svg", heatmap.stable.export.ATAC.EM, width = 5, height = 7, units = "in")
 ```
 
 
 Drawing the heatmap for TET KO down
 
 ```{r}
-pheatmap(heatmap.down,
+pheatmap(heatmap.down.ATAC.EM,
          cluster_rows = FALSE,
          cluster_cols = FALSE,
-         breaks = seq(-1.5, 0.5, length.out = 100),
-         color = colorRampPalette(rev(brewer.pal(3, "YlGnBu")))(99),
+         #breaks = seq(0.5, 1.5, length.out = 100),
+         color = colorRampPalette(brewer.pal(3, "YlOrRd"))(99),
          border_color = "#d4d4d4",
          na_col = "#f5f5f5",
          angle_col = 0,
-         main = "ATAC difference - TET KO downregulated",
-         show_rownames = FALSE) -> heatmap.down.export
+         main = "ATAC TET WT EPI - TET KO downregulated",
+         show_rownames = FALSE
+         ) -> heatmap.down.export
 
-ggsave("../output/plots/ATAC_diff_down.png", heatmap.down.export, width = 5, height = 7, units = "in")
+ggsave("../output/plots/SuppFigure6b_down_EM.png", heatmap.down.export, width = 5, height = 7, units = "in")
+ggsave("../output/plots/SuppFigure6b_down_EM.svg", heatmap.down.export, width = 5, height = 7, units = "in")
 ```
-
-
-
-
-
 

@@ -1,0 +1,226 @@
+---
+title: "Figure 4f - expression levels"
+output: html_notebook
+---
+
+This workbook is creating the violin plots of RNA expression using in Figure 4f of stable and downregulated genes. This uses the EM and Louvain clustering we have switched to during the paper revision.
+
+Starting with cluster group active P - active E (active promoter, active enhancer).
+Having two groups of genes, the ones that change expression (ie in the TET TKO WT comparison) and those that don't change expression.
+
+
+Loading packages and options
+
+```{r}
+library(tidyverse)
+options(scipen = 999)
+source("cluster_analysis_functions.R")
+```
+
+
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+read_tsv("../data/Annotated Probe Report for DE TET Epi WT vs KO no MTC.txt") -> TET_WT_vs_KO_import
+```
+
+
+Finding the group of downregulated genes (TET DE without MTC)
+
+```{r}
+TET_WT_vs_KO_import %>% 
+  select(Probe, TET_WT_Epi_2, TET_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  filter(TET_KO_Epi_2 < TET_WT_Epi_2) %>% 
+  pull(Probe) -> TET_KO_down_genes
+```
+
+
+
+## EM clustering
+
+Plotting the expression data for TET KO down and stable genes that are found in the magic table.
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  drop_na() %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 > -0.25 & RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 < 0.25 ~ "stable_genes")) -> activeE_groups_EM
+
+head(activeE_groups_EM)
+```
+
+How many do we get for downregulated and stable?
+
+```{r}
+activeE_groups_EM %>% 
+  group_by(group) %>% 
+  distinct(P_gene, .keep_all = TRUE) %>% # we need this here because we have several interactions per gene
+  count() -> groups_counted_EM
+
+groups_counted_EM
+
+groups_counted_EM %>% 
+  filter(group == "TET_KO_down") %>% 
+  pull(n) -> number_KO_genes
+```
+
+I found that there are 405 interactions that involved a total of 145 TET KO down genes in this data frame and I want to have the same number of stable genes.
+
+```{r}
+set.seed(6)
+
+activeE_groups_EM %>% 
+  filter(group == "stable_genes") %>% 
+  distinct(P_gene) %>% 
+  slice_sample(n = number_KO_genes) %>% 
+  pull() -> stable_genes_selected_EM
+```
+
+Now going back to the original magic table
+filtering for the active P - active E cluster group (EM)
+selecting expression
+selecting stable and knocked down genes
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           P_gene %in% stable_genes_selected_EM ~ "stable")) %>% 
+  filter(!is.na(group)) -> expression_data_EM
+
+head(expression_data_EM)
+```
+
+Reshaping data for violins
+
+```{r}
+expression_data_EM %>% 
+  rename(WT = RNA_TET_WT_EpiLC_D2, TKO = RNA_TET_KO_EpiLC_D2) %>% 
+  pivot_longer(WT:TKO, names_to = "genotype", values_to = "log2RPKM") %>% 
+  mutate(group = case_when(group == "TET_KO_down" ~ "Downregulated",
+                          group == "stable" ~ "Stable")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "TKO"))) %>% 
+  mutate(group = factor(group, levels = c("Stable", "Downregulated"))) -> expression_to_plot_EM
+
+head(expression_to_plot_EM)
+```
+Plotting violins
+
+```{r, fig.width=4, fig.height=4}
+expression_to_plot_EM %>% 
+  ggplot(aes(genotype, log2RPKM, fill = genotype)) +
+  geom_violin(draw_quantiles = 0.5) +
+  scale_fill_manual(values = c(TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  ylab("mRNA expression log2 RPKM") +
+  facet_wrap(facets = "group") +
+  theme(legend.position = "none", axis.title.x = element_blank(), strip.background = element_rect(fill = "white"),
+        axis.title.y = element_text(size = 12)) -> expression_violins_EM
+
+expression_violins_EM
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4f_expression_violins_EM.png", expression_violins_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4f_expression_violins_EM.svg", expression_violins_EM, width = 4, height = 4, units = "in")
+```
+
+## Louvain clustering
+
+Plotting the expression data for TET KO down and stable genes that are found in the magic table.
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  drop_na() %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 > -0.25 & RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 < 0.25 ~ "stable_genes")) -> activeE_groups_Louvain
+
+head(activeE_groups_Louvain)
+```
+
+How many do we get for downregulated and stable?
+
+```{r}
+activeE_groups_Louvain %>% 
+  group_by(group) %>% 
+  distinct(P_gene, .keep_all = TRUE) %>% # we need this here because we have several interactions per gene
+  count() -> groups_counted_Louvain
+
+groups_counted_Louvain
+
+groups_counted_Louvain %>% 
+  filter(group == "TET_KO_down") %>% 
+  pull(n) -> number_KO_genes
+```
+
+I found that there are 170 TET KO down genes in this data frame and I want to have the same number of stable genes.
+
+```{r}
+set.seed(6)
+
+activeE_groups_Louvain %>% 
+  filter(group == "stable_genes") %>% 
+  distinct(P_gene) %>% 
+  slice_sample(n = number_KO_genes) %>% 
+  pull() -> stable_genes_selected_Louvain
+```
+
+Now going back to the original magic table
+filtering for the active P - active E cluster group (Louvain)
+selecting expression
+selecting stable and knocked down genes
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           P_gene %in% stable_genes_selected_Louvain ~ "stable")) %>% 
+  filter(!is.na(group)) -> expression_data_Louvain
+
+head(expression_data_Louvain)
+```
+
+Reshaping data for violins
+
+```{r}
+expression_data_Louvain %>% 
+  rename(WT = RNA_TET_WT_EpiLC_D2, TKO = RNA_TET_KO_EpiLC_D2) %>% 
+  pivot_longer(WT:TKO, names_to = "genotype", values_to = "log2RPKM") %>% 
+  mutate(group = case_when(group == "TET_KO_down" ~ "Downregulated",
+                          group == "stable" ~ "Stable")) %>% 
+  mutate(genotype = factor(genotype, levels = c("WT", "TKO"))) %>% 
+  mutate(group = factor(group, levels = c("Stable", "Downregulated"))) -> expression_to_plot_Louvain
+
+head(expression_to_plot_Louvain)
+```
+
+Plotting violins
+
+```{r, fig.width=4, fig.height=4}
+expression_to_plot_Louvain %>% 
+  ggplot(aes(genotype, log2RPKM, fill = genotype)) +
+  geom_violin(draw_quantiles = 0.5) +
+  scale_fill_manual(values = c(TET_Epi_WT_colour, TET_Epi_KO_colour)) +
+  ylab("mRNA expression log2 RPKM") +
+  facet_wrap(facets = "group") +
+  theme(legend.position = "none", axis.title.x = element_blank(), strip.background = element_rect(fill = "white"),
+        axis.title.y = element_text(size = 12)) -> expression_violins_Louvain
+
+expression_violins_Louvain
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4f_expression_violins_Louvain.png", expression_violins_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4f_expression_violins_Louvain.svg", expression_violins_Louvain, width = 4, height = 4, units = "in")
+```

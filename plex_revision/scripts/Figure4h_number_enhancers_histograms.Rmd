@@ -1,0 +1,261 @@
+---
+title: "Figure 4h - number of interacting enhancers, histograms"
+output:
+  html_document:
+    df_print: paged
+---
+
+This workbook is creating histograms for the number of interacting enhancers in Figure 4h of stable and downregulated genes. This uses the EM and Louvain clustering we have switched to during the paper revision.
+
+Looking at the original Figure 4h I decided that it wasn't the best way to represent the data. In particular, I didn't like the jitter for the number of enhancers. Let's see what the histograms look like.
+
+Starting with cluster group active P - active E (active promoter, active enhancer).
+Having two groups of genes, the ones that change expression (ie in the TET TKO WT comparison) and those that don't change expression.
+
+
+Loading packages and options
+
+```{r}
+library(tidyverse)
+options(scipen = 999)
+source("cluster_analysis_functions.R")
+```
+
+
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+read_tsv("../data/Annotated Probe Report for DE TET Epi WT vs KO no MTC.txt") -> TET_WT_vs_KO_import
+```
+
+
+Finding the group of downregulated genes (TET DE without MTC)
+
+```{r}
+TET_WT_vs_KO_import %>% 
+  select(Probe, TET_WT_Epi_2, TET_KO_Epi_2) %>% 
+  distinct(Probe, .keep_all = TRUE) %>% 
+  filter(TET_KO_Epi_2 < TET_WT_Epi_2) %>% 
+  pull(Probe) -> TET_KO_down_genes
+```
+
+
+
+## EM clustering
+
+Plotting the number of enhancer interactions for TET KO down and stable genes that are found in the magic table.
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  drop_na() %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 > -0.25 & RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 < 0.25 ~ "stable_genes")) -> activeE_groups_EM
+
+head(activeE_groups_EM)
+```
+
+How many do we get for downregulated and stable?
+
+```{r}
+activeE_groups_EM %>% 
+  group_by(group) %>% 
+  distinct(P_gene, .keep_all = TRUE) %>% # we need this here because we have several interactions per gene
+  count() -> groups_counted_EM
+
+groups_counted_EM
+
+groups_counted_EM %>% 
+  filter(group == "TET_KO_down") %>% 
+  pull(n) -> number_KO_genes
+```
+
+I found that there are 405 interactions that involved a total of 145 TET KO down genes in this data frame and I want to have the same number of stable genes.
+
+```{r}
+set.seed(6)
+
+activeE_groups_EM %>% 
+  filter(group == "stable_genes") %>% 
+  distinct(P_gene) %>% 
+  slice_sample(n = number_KO_genes) %>% 
+  pull() -> stable_genes_selected_EM
+```
+
+Now going back to the original magic table
+filtering for the active P - active E cluster group (EM)
+selecting expression
+selecting stable and knocked down genes
+
+```{r}
+magic_table_uncapped %>% 
+  filter(EM_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           P_gene %in% stable_genes_selected_EM ~ "stable")) %>% 
+  filter(!is.na(group)) -> expression_data_EM
+
+head(expression_data_EM)
+```
+Finding the number of enhancers for each gene
+
+```{r}
+expression_data_EM %>% 
+  group_by(P_gene) %>% 
+  add_count() %>% 
+  select(P_gene, group, n) %>% 
+  distinct() -> enhancer_counts_EM
+
+head(enhancer_counts_EM)
+```
+
+Plotting histograms
+
+```{r}
+bin_number_EM <- max(enhancer_counts_EM$n)
+
+enhancer_counts_EM %>% 
+  ggplot(aes(n, fill = group)) +
+  geom_histogram(bins = bin_number_EM, position = "dodge")
+```
+Hm, I don't really like this. How about a line graph where the data points can be on at the same location on the x axis?
+
+### Enhancer count line plot EM
+
+```{r, fig.width=4, fig.height=4}
+enhancer_counts_EM %>% 
+  group_by(group, n) %>% 
+  count() %>% 
+  mutate(group = if_else(group == "stable", "Stable", "Downregulated")) %>% 
+  mutate(group = factor(group, levels = c("Stable", "Downregulated"))) -> enhancer_counts_sum_EM
+
+enhancer_counts_sum_EM %>% 
+  ggplot(aes(n, nn, colour = group)) +
+  geom_line(size = 1) +
+  ylab("count") +
+  xlab("number of enhancers per gene") +
+  scale_colour_manual(values = c("#bababa", down_colour)) +
+  theme(legend.position = "inside", legend.position.inside = c(0.7, 0.86), legend.title = element_blank(), axis.title = element_text(size = 12),
+        legend.background = element_rect(colour = "black", size = 0.4)) -> enhancer_count_line_plot_EM
+
+enhancer_count_line_plot_EM
+  
+```
+
+
+
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4h_number_enhancer_line_EM.png", enhancer_count_line_plot_EM, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4h_number_enhancer_line_EM.svg", enhancer_count_line_plot_EM, width = 4, height = 4, units = "in")
+```
+
+## Louvain clustering
+
+Plotting the number of enhancers for TET KO down and stable genes that are found in the magic table.
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  drop_na() %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 > -0.25 & RNA_TET_WT_EpiLC_D2 - RNA_TET_KO_EpiLC_D2 < 0.25 ~ "stable_genes")) -> activeE_groups_Louvain
+
+head(activeE_groups_Louvain)
+```
+
+How many do we get for downregulated and stable?
+
+```{r}
+activeE_groups_Louvain %>% 
+  group_by(group) %>% 
+  distinct(P_gene, .keep_all = TRUE) %>% # we need this here because we have several interactions per gene
+  count() -> groups_counted_Louvain
+
+groups_counted_Louvain
+
+groups_counted_Louvain %>% 
+  filter(group == "TET_KO_down") %>% 
+  pull(n) -> number_KO_genes
+```
+
+I found that there are 170 TET KO down genes in this data frame and I want to have the same number of stable genes.
+
+```{r}
+set.seed(6)
+
+activeE_groups_Louvain %>% 
+  filter(group == "stable_genes") %>% 
+  distinct(P_gene) %>% 
+  slice_sample(n = number_KO_genes) %>% 
+  pull() -> stable_genes_selected_Louvain
+```
+
+Now going back to the original magic table
+filtering for the active P - active E cluster group (Louvain)
+selecting expression
+selecting stable and knocked down genes
+
+```{r}
+magic_table_uncapped %>% 
+  filter(Louvain_cluster_group == "active P - active E") %>% 
+  select(interaction_ID, P_gene, RNA_TET_WT_EpiLC_D2, RNA_TET_KO_EpiLC_D2) %>% 
+  mutate(group = case_when(P_gene %in% TET_KO_down_genes ~ "TET_KO_down",
+                           P_gene %in% stable_genes_selected_Louvain ~ "stable")) %>% 
+  filter(!is.na(group)) -> expression_data_Louvain
+
+head(expression_data_Louvain)
+```
+Finding the number of enhancers for each gene
+
+```{r}
+expression_data_Louvain %>% 
+  group_by(P_gene) %>% 
+  add_count() %>% 
+  select(P_gene, group, n) %>% 
+  distinct() -> enhancer_counts_Louvain
+
+head(enhancer_counts_Louvain)
+```
+
+
+### Enhancer count line plot Louvain
+
+```{r, fig.width=4, fig.height=4}
+enhancer_counts_Louvain %>% 
+  group_by(group, n) %>% 
+  count() %>% 
+  mutate(group = if_else(group == "stable", "Stable", "Downregulated")) %>% 
+  mutate(group = factor(group, levels = c("Stable", "Downregulated"))) -> enhancer_counts_sum_Louvain
+
+enhancer_counts_sum_Louvain %>% 
+  ggplot(aes(n, nn, colour = group)) +
+  geom_line(size = 1) +
+  ylab("count") +
+  xlab("number of enhancers per gene") +
+  scale_colour_manual(values = c("#bababa", down_colour)) +
+  theme(legend.position = "inside", legend.position.inside = c(0.7, 0.86), legend.title = element_blank(), axis.title = element_text(size = 12),
+        legend.background = element_rect(colour = "black", size = 0.4)) -> enhancer_count_line_plot_Louvain
+
+enhancer_count_line_plot_Louvain
+  
+```
+
+
+
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure4h_number_enhancer_line_Louvain.png", enhancer_count_line_plot_Louvain, width = 4, height = 4, units = "in")
+ggsave("../output/plots/Figure4h_number_enhancer_line_Louvain.svg", enhancer_count_line_plot_Louvain, width = 4, height = 4, units = "in")
+```
+
+
+
+

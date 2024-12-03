@@ -1,0 +1,74 @@
+---
+title: "Figure 6bcde blood enhancers"
+output: html_notebook
+---
+
+The workbook will create Figure 6bcde relating to blood enhancers in EpiLCs. This uses the EM and Louvain clustering we have switched to during the paper revision.
+I will attempt a different representation of the data as I find the original figure quite messy. Let's see how that goes.
+
+
+Loading packages and options
+
+```{r}
+library(tidyverse)
+options(scipen = 999)
+source("cluster_analysis_functions.R")
+```
+
+
+Importing data
+
+```{r}
+read_tsv("../data/interaction_pairs_uncapped.txt") -> magic_table_uncapped
+```
+
+Filtering for the right marks and the right time points
+
+```{r}
+magic_table_uncapped %>% 
+  select(-contains("cluster_ID"), -contains("UMAP"), -P_ID, -PIR_ID, -PIR_gene, -contains("_ES_"), - contains("_hmC_"), -contains("mC"),
+         -contains("Input"), -contains("ATAC"), -contains("CTCF"), -contains("H3K27me3"), -contains("H3K27ac"), -contains("RNA"), -contains("P_"),
+         -contains("H3K4me3"), -cluster_group, P_gene) %>% 
+  mutate(CHiC_diff_DNMT = CHiC_DNMT_KO_EpiLC_D2 - CHiC_DNMT_WT_EpiLC_D2,
+         K4me1_diff_DNMT = PIR_H3K4me1_DNMT_KO_EpiLC_D2 - PIR_H3K4me1_DNMT_WT_EpiLC_D2,
+         CHiC_diff_TET = CHiC_TET_KO_EpiLC_D2 - CHiC_TET_WT_EpiLC_D2,
+         K4me1_diff_TET = PIR_H3K4me1_TET_KO_EpiLC_D2 - PIR_H3K4me1_TET_WT_EpiLC_D2) %>% 
+  select(interaction_ID, EM_cluster_group, Louvain_cluster_group, P_gene, contains("diff")) -> mark_differences
+
+head(mark_differences)
+```
+
+Defining genes of interest
+
+```{r}
+genes_of_interest <- c("Tal1", "Nfe2", "Runx1", "Klf1", "Lyl1", "Gata1")
+```
+
+
+### EM clustering
+
+```{r}
+mark_differences %>% 
+  select(-Louvain_cluster_group) %>% 
+  filter(P_gene %in% genes_of_interest) -> blood_PIR_differences_EM
+
+head(blood_PIR_differences_EM)
+```
+
+Figure 6b EM (K4me1, TET)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_EM %>% 
+  ggplot(aes(EM_cluster_group, K4me1_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1 <- <- <- ) +
+  ylab("log2 fold difference H3K4me1\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank())
+```
+
+
+
+
+
+

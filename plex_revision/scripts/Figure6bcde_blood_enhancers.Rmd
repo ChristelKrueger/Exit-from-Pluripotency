@@ -1,6 +1,8 @@
 ---
 title: "Figure 6bcde blood enhancers"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 The workbook will create Figure 6bcde relating to blood enhancers in EpiLCs. This uses the EM and Louvain clustering we have switched to during the paper revision.
@@ -61,14 +63,152 @@ Figure 6b EM (K4me1, TET)
 blood_PIR_differences_EM %>% 
   ggplot(aes(EM_cluster_group, K4me1_diff_TET, colour = P_gene)) +
   geom_hline(yintercept = 0, linetype = "dotted") +
-  geom_jitter(height = 0, width = 0.1 <- <- <- ) +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
   ylab("log2 fold difference H3K4me1\n (TET TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
-        axis.title.y = element_text(size = 12), legend.title = element_blank())
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6b_EM
+
+Fig6b_EM
 ```
 
+Figure 6c EM (CHiC, TET)
 
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_EM %>% 
+  ggplot(aes(EM_cluster_group, CHiC_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("difference CHiC\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6c_EM
 
+Fig6c_EM
+```
+Figure 6d EM (K4me1, DNMT)
 
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_EM %>% 
+  ggplot(aes(EM_cluster_group, K4me1_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference H3K4me1\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6d_EM
 
+Fig6d_EM
+```
 
+Figure 6e EM (CHiC, DNMT)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_EM %>% 
+  filter (CHiC_diff_DNMT > -10) %>% 
+  ggplot(aes(EM_cluster_group, CHiC_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("difference CHiC\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6e_EM
+
+Fig6e_EM
+```
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure6b_K4me1_blood_enhancers_EM.png", Fig6b_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6b_K4me1_blood_enhancers_EM.svg", Fig6b_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6d_K4me1_blood_enhancers_EM.png", Fig6d_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6d_K4me1_blood_enhancers_EM.svg", Fig6d_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6c_CHiC_blood_enhancers_EM.png", Fig6c_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6c_CHiC_blood_enhancers_EM.svg", Fig6c_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6e_CHiC_blood_enhancers_EM.png", Fig6e_EM, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6e_CHiC_blood_enhancers_EM.svg", Fig6e_EM, width = 5, height = 5, units = "in")
+```
+
+### Louvain clustering
+
+```{r}
+mark_differences %>% 
+  select(-EM_cluster_group) %>% 
+  filter(P_gene %in% genes_of_interest) -> blood_PIR_differences_Louvain
+
+head(blood_PIR_differences_Louvain)
+```
+
+Figure 6b Louvain (K4me1, TET)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, K4me1_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference H3K4me1\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6b_Louvain
+
+Fig6b_Louvain
+```
+
+Figure 6c Louvain (CHiC, TET)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, CHiC_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("difference CHiC\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6c_Louvain
+
+Fig6c_Louvain
+```
+
+Figure 6d Louvain (K4me1, DNMT)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, K4me1_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference H3K4me1\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6d_Louvain
+
+Fig6d_Louvain
+```
+
+Figure 6e Louvain (CHiC, DNMT)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  filter (CHiC_diff_DNMT > -10) %>% 
+  ggplot(aes(Louvain_cluster_group, CHiC_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("difference CHiC\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> Fig6e_Louvain
+
+Fig6e_Louvain
+```
+
+Exporting
+
+```{r}
+ggsave("../output/plots/Figure6b_K4me1_blood_enhancers_Louvain.png", Fig6b_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6b_K4me1_blood_enhancers_Louvain.svg", Fig6b_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6d_K4me1_blood_enhancers_Louvain.png", Fig6d_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6d_K4me1_blood_enhancers_Louvain.svg", Fig6d_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6c_CHiC_blood_enhancers_Louvain.png", Fig6c_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6c_CHiC_blood_enhancers_Louvain.svg", Fig6c_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6e_CHiC_blood_enhancers_Louvain.png", Fig6e_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/Figure6e_CHiC_blood_enhancers_Louvain.svg", Fig6e_Louvain, width = 5, height = 5, units = "in")
+```

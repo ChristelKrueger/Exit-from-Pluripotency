@@ -34,6 +34,8 @@ exp_colour <- "#999999"
 up_colour <- "#AD0303"
 down_colour <- "#0072B2"
 
+blood_genes_colours <- c("#ff595e","#ff924c","#ffca3a","#8ac926","#1982c4","#6a4c93")
+
 
 
 

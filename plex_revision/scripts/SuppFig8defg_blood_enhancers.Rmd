@@ -130,4 +130,86 @@ ggsave("../output/plots/SuppFigure8g_K27ac_blood_enhancers_EM.svg", SuppFig8g_EM
 ```
 
 
+### Louvain clustering
+
+```{r}
+mark_differences %>% 
+  select(-EM_cluster_group) %>% 
+  filter(P_gene %in% genes_of_interest) -> blood_PIR_differences_Louvain
+
+head(blood_PIR_differences_Louvain)
+```
+
+Supp Figure 8d Louvain (ATAC, TET)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, ATAC_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference ATAC\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8d_Louvain
+
+SuppFig8d_Louvain
+```
+
+Supplemental Figure 8e Louvain (H3K27ac, TET)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, K27ac_diff_TET, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference H3K27ac\n (TET TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8e_Louvain
+
+SuppFig8e_Louvain
+```
+Supplemental Figure 8f Louvain (ATAC, DNMT)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  ggplot(aes(Louvain_cluster_group, ATAC_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference ATAC\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8f_Louvain
+
+SuppFig8f_Louvain
+```
+
+Supplemental Figure 8g Louvain (H3K27ac, DNMT)
+
+```{r, fig.width= 5, fig.height=5}
+blood_PIR_differences_Louvain %>% 
+  #filter (H3K27ac_diff_DNMT > -10) %>% 
+  ggplot(aes(Louvain_cluster_group, K27ac_diff_DNMT, colour = P_gene)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_jitter(height = 0, width = 0.1) +
+  scale_colour_manual(values = blood_genes_colours) +
+  ylab("log2 fold difference H3K27ac\n (DNMT TKO - WT)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8g_Louvain
+
+SuppFig8g_Louvain
+```
+Exporting
+
+```{r}
+ggsave("../output/plots/SuppFigure8d_ATAC_blood_enhancers_Louvain.png", SuppFig8d_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8d_ATAC_blood_enhancers_Louvain.svg", SuppFig8d_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8f_ATAC_blood_enhancers_Louvain.png", SuppFig8f_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8f_ATAC_blood_enhancers_Louvain.svg", SuppFig8f_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8e_K27ac_blood_enhancers_Louvain.png", SuppFig8e_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8e_K27ac_blood_enhancers_Louvain.svg", SuppFig8e_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8g_K27ac_blood_enhancers_Louvain.png", SuppFig8g_Louvain, width = 5, height = 5, units = "in")
+ggsave("../output/plots/SuppFigure8g_K27ac_blood_enhancers_Louvain.svg", SuppFig8g_Louvain, width = 5, height = 5, units = "in")
+```
+
 

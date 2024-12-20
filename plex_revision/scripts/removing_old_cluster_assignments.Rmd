@@ -1,0 +1,29 @@
+---
+title: "Removing old cluster assignments from magic tables"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+Loading the current magic tables
+
+```{r}
+read_tsv("../data/interaction_pairs_capped.txt") -> capped_data_original
+read_tsv("../data/interaction_pairs_uncapped.txt") -> uncapped_data_original
+```
+Removing the old cluster
+
+```{r}
+uncapped_data_original %>% 
+  select(-cluster_ID, -cluster_group) -> uncapped_data_new
+
+head(uncapped_data_new)
+```
+So it turns out that the capped data didn't have the old cluster groups, but the uncapped did. I am going to write out directly into the data folder (living a dangerous life here).
+
+```{r}
+write_tsv(uncapped_data_new, "../data/interaction_pairs_uncapped.txt")
+```
+

@@ -170,7 +170,7 @@
 <polyline points='45.86,189.47 49.84,189.47 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='45.86,169.30 49.84,169.30 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='45.86,149.14 49.84,149.14 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
-<text transform='translate(16.58,141.12) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Arial";' textLength='57.36px' lengthAdjust='spacingAndGlyphs'>log2RPKM</text>
+<text transform='translate(16.58,141.12) rotate(-90)' text-anchor='middle' style='font-size: 12.00px; font-family: "Arial";' textLength='34.68px' lengthAdjust='spacingAndGlyphs'>RPKM</text>
 <text x='111.13' y='16.58' text-anchor='middle' style='font-size: 12.00px; font-family: "Arial";' textLength='72.68px' lengthAdjust='spacingAndGlyphs'>EM clustering</text>
 </g>
 </svg>

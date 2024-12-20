@@ -146,6 +146,6 @@
 <polyline points='26.73,214.32 30.72,214.32 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='26.73,189.68 30.72,189.68 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='26.73,165.04 30.72,165.04 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
-<text x='86.97' y='22.56' text-anchor='middle' style='font-size: 8.00px; font-family: "Arial";' textLength='83.59px' lengthAdjust='spacingAndGlyphs'>H3K4me1 (log2 RPKM)</text>
+<text x='86.97' y='22.56' text-anchor='middle' style='font-size: 8.00px; font-family: "Arial";' textLength='66.24px' lengthAdjust='spacingAndGlyphs'>H3K4me1 (RPKM)</text>
 </g>
 </svg>

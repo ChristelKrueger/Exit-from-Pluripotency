@@ -30,7 +30,7 @@ Filtering for the right marks and the right time points
 magic_table_uncapped %>% 
   select(-contains("cluster_ID"), -contains("UMAP"), -P_ID, -PIR_ID, -PIR_gene, -contains("_ES_"), - contains("_hmC_"), -contains("mC"),
          -contains("Input"), -contains("CTCF"), -contains("H3K27me3"), -contains("H3K4me1"), -contains("RNA"), -contains("P_"),
-         -contains("H3K4me3"), -contains("CHiC"), -cluster_group, P_gene) %>% 
+         -contains("H3K4me3"), -contains("CHiC"), P_gene) %>% 
   mutate(ATAC_diff_DNMT = PIR_ATAC_DNMT_KO_EpiLC_D2 - PIR_ATAC_DNMT_WT_EpiLC_D2,
          K27ac_diff_DNMT = PIR_H3K27ac_DNMT_KO_EpiLC_D2 - PIR_H3K27ac_DNMT_WT_EpiLC_D2,
          ATAC_diff_TET = PIR_ATAC_TET_KO_EpiLC_D2 - PIR_ATAC_TET_WT_EpiLC_D2,
@@ -65,7 +65,7 @@ blood_PIR_differences_EM %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference ATAC\n (TET TKO - WT)") +
+  ylab("difference ATAC\n (TET TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8d_EM
 
@@ -80,7 +80,7 @@ blood_PIR_differences_EM %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference H3K27ac\n (TET TKO - WT)") +
+  ylab("difference H3K27ac\n (TET TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8e_EM
 
@@ -94,7 +94,7 @@ blood_PIR_differences_EM %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference ATAC\n (DNMT TKO - WT)") +
+  ylab("difference ATAC\n (DNMT TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8f_EM
 
@@ -110,7 +110,7 @@ blood_PIR_differences_EM %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference H3K27ac\n (DNMT TKO - WT)") +
+  ylab("difference H3K27ac\n (DNMT TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8g_EM
 
@@ -148,7 +148,7 @@ blood_PIR_differences_Louvain %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference ATAC\n (TET TKO - WT)") +
+  ylab("difference ATAC\n (TET TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8d_Louvain
 
@@ -163,7 +163,7 @@ blood_PIR_differences_Louvain %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference H3K27ac\n (TET TKO - WT)") +
+  ylab("difference H3K27ac\n (TET TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8e_Louvain
 
@@ -177,7 +177,7 @@ blood_PIR_differences_Louvain %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference ATAC\n (DNMT TKO - WT)") +
+  ylab("difference ATAC\n (DNMT TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8f_Louvain
 
@@ -193,7 +193,7 @@ blood_PIR_differences_Louvain %>%
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_jitter(height = 0, width = 0.1) +
   scale_colour_manual(values = blood_genes_colours) +
-  ylab("log2 fold difference H3K27ac\n (DNMT TKO - WT)") +
+  ylab("difference H3K27ac\n (DNMT TKO - WT)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 12), legend.title = element_blank()) -> SuppFig8g_Louvain
 

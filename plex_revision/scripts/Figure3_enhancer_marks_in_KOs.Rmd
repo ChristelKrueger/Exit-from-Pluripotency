@@ -1,6 +1,8 @@
 ---
-title: "Figure 3: enhancer marks in KOs"
-output: html_notebook
+title: 'Figure 3: enhancer marks in KOs'
+output:
+  html_document:
+    df_print: paged
 ---
 
 This script will create the panels of Figure 3 of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
@@ -30,11 +32,11 @@ magic_table_uncapped %>%
   filter(EM_cluster_group == "active P - active E") %>% 
   select(interaction_ID, contains("EpiLC_D2"), -starts_with("P_"), -starts_with("CHiC"), -contains("mC_"), -contains("ATAC"),
          -contains("CTCF"), -contains("H3K27me3"), -contains("H3K4me3"), -contains("Input")) %>% 
-  pivot_longer(2:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(2:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   mutate(sample = gsub("RNA", "PIR_RNA", sample)) %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-fragment, -stage, -day) %>% 
-  pivot_wider(names_from = genotype, values_from = log2RPKM) %>% 
+  pivot_wider(names_from = genotype, values_from = RPKM) %>% 
   mutate(KO_WT_diff = KO - WT)-> enhancer_marks_EM
 
 head(enhancer_marks_EM)
@@ -54,7 +56,7 @@ enhancer_marks_EM %>%
   geom_density() +
   xlim(-5, 5) +
   scale_colour_manual(values = c(K27ac_colour, K4me1_colour, exp_colour)) +
-  xlab("Difference (log2 RPKM)") +
+  xlab("Difference (RPKM)") +
   ggtitle("EM clusters") +
   facet_wrap(facets = "line") +
   theme(legend.title = element_blank(), strip.background = element_rect(fill = "white"), legend.position = "inside", 
@@ -75,11 +77,11 @@ magic_table_uncapped %>%
   filter(Louvain_cluster_group == "active P - active E") %>% 
   select(interaction_ID, contains("EpiLC_D2"), -starts_with("P_"), -starts_with("CHiC"), -contains("mC_"), -contains("ATAC"),
          -contains("CTCF"), -contains("H3K27me3"), -contains("H3K4me3"), -contains("Input")) %>% 
-  pivot_longer(2:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(2:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   mutate(sample = gsub("RNA", "PIR_RNA", sample)) %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-fragment, -stage, -day) %>% 
-  pivot_wider(names_from = genotype, values_from = log2RPKM) %>% 
+  pivot_wider(names_from = genotype, values_from = RPKM) %>% 
   mutate(KO_WT_diff = KO - WT)-> enhancer_marks_Louvain
 
 head(enhancer_marks_Louvain)
@@ -97,7 +99,7 @@ enhancer_marks_Louvain %>%
   geom_density() +
   xlim(-5, 5) +
   scale_colour_manual(values = c(K27ac_colour, K4me1_colour, exp_colour)) +
-  xlab("Difference (log2 RPKM)") +
+  xlab("Difference (RPKM)") +
   ggtitle("Louvain clusters") +
   facet_wrap(facets = "line") +
   theme(legend.title = element_blank(), strip.background = element_rect(fill = "white"), legend.position = "inside", 
@@ -131,7 +133,7 @@ magic_table_uncapped %>%
   filter(EM_cluster_group == "inactive P - primed E" | EM_cluster_group == "active P - active E" | EM_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, EM_cluster_group, contains("H3K4me1")) %>% 
   select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K4me1_enhancers_EM
 
@@ -151,7 +153,7 @@ K4me1_enhancers_EM %>%
   mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("EM clustering") +
@@ -175,7 +177,7 @@ magic_table_uncapped %>%
   filter(Louvain_cluster_group == "inactive P - primed E" | Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, Louvain_cluster_group, contains("H3K4me1")) %>% 
   select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K4me1_enhancers_Louvain
 
@@ -194,7 +196,7 @@ K4me1_enhancers_Louvain %>%
   mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("Louvain clustering") +
@@ -229,7 +231,7 @@ magic_table_uncapped %>%
   filter(EM_cluster_group == "inactive P - primed E" | EM_cluster_group == "active P - active E" | EM_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, EM_cluster_group, contains("H3K27ac")) %>% 
   select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K27ac_enhancers_EM
 
@@ -249,7 +251,7 @@ K27ac_enhancers_EM %>%
   mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("EM clustering") +
@@ -274,7 +276,7 @@ magic_table_uncapped %>%
   filter(Louvain_cluster_group == "inactive P - primed E" | Louvain_cluster_group == "active P - active E" | Louvain_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, Louvain_cluster_group, contains("H3K27ac")) %>% 
   select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K27ac_enhancers_Louvain
 
@@ -294,7 +296,7 @@ K27ac_enhancers_Louvain %>%
   mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Primed E", "Active E", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("Louvain clustering") +
@@ -330,7 +332,7 @@ magic_table_uncapped %>%
   filter(EM_cluster_group == "polycomb P - unmarked PIR" | EM_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, EM_cluster_group, contains("H3K27me3")) %>% 
   select(interaction_ID, EM_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K27me3_enhancers_EM
 
@@ -349,7 +351,7 @@ K27me3_enhancers_EM %>%
   mutate(EM_cluster_group = factor(EM_cluster_group, levels = c("Polycomb P", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("EM clustering") +
@@ -373,7 +375,7 @@ magic_table_uncapped %>%
   filter(Louvain_cluster_group == "polycomb P - unmarked PIR" | Louvain_cluster_group == "bivalent P - poised E") %>% 
   select(interaction_ID, Louvain_cluster_group, contains("H3K27me3")) %>% 
   select(interaction_ID, Louvain_cluster_group, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> K27me3_enhancers_Louvain
 
@@ -392,7 +394,7 @@ K27me3_enhancers_Louvain %>%
   mutate(Louvain_cluster_group = factor(Louvain_cluster_group, levels = c("Polycomb P", "Poised E"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("Louvain clustering") +

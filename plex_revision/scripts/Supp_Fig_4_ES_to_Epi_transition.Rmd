@@ -1,6 +1,8 @@
 ---
 title: "Suppl Figure 4 - ES to Epi transition"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 This script will create the panels of Supplemental Figure 4c - h of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
@@ -53,7 +55,7 @@ SuppFigure4_EM %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K27me3 (log2 RPKM)") +
+  ggtitle("H3K27me3 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ EM_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -79,7 +81,7 @@ SuppFigure4_EM %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K4me1 (log2 RPKM)") +
+  ggtitle("H3K4me1 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ EM_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -127,7 +129,7 @@ SuppFigure4_EM %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K4me1 (log2 RPKM)") +
+  ggtitle("H3K4me1 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ EM_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -152,7 +154,7 @@ SuppFigure4_EM %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K27ac (log2 RPKM)") +
+  ggtitle("H3K27ac (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ EM_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -244,7 +246,7 @@ SuppFigure4_Louvain %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K27me3 (log2 RPKM)") +
+  ggtitle("H3K27me3 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ Louvain_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -270,7 +272,7 @@ SuppFigure4_Louvain %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K4me1 (log2 RPKM)") +
+  ggtitle("H3K4me1 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ Louvain_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -318,7 +320,7 @@ SuppFigure4_Louvain %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K4me1 (log2 RPKM)") +
+  ggtitle("H3K4me1 (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ Louvain_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 
@@ -343,7 +345,7 @@ SuppFigure4_Louvain %>%
   ggplot(aes(stage, value, fill = stage)) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ylim(0,10) +
-  ggtitle("H3K27ac (log2 RPKM)") +
+  ggtitle("H3K27ac (RPKM)") +
   scale_fill_manual(values = c(ES_colour, Epi_colour)) +
   facet_grid(fragment ~ Louvain_cluster_group) +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_text(size = 8, margin = margin(r=0)), 

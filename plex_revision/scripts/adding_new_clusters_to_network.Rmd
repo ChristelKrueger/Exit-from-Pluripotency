@@ -1,0 +1,42 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+After producing the new cluster groups for EM and Louvain clustering, I also need to add this information to the network graph.
+I have exported the current annotation of the edges and will add the cluster groups via the interaction identifier.
+
+```{r}
+library(tidyverse)
+```
+
+Importing data
+
+```{r}
+read_csv("../data/edges_original_241206.csv") -> edges_original
+read_tsv("../data/interaction_pairs_uncapped.txt") -> interaction_pairs_uncapped
+```
+
+Tidying and merging
+
+```{r}
+edges_original %>% 
+  select(-e_cluster_id) -> edges
+
+interaction_pairs_uncapped %>% 
+  select(interaction_ID, EM_cluster_group, Louvain_cluster_group) %>% 
+  rename(e_interaction_id = interaction_ID) -> assignments
+
+edges %>% 
+  left_join(assignments) %>% 
+  relocate(EM_cluster_group, Louvain_cluster_group,.after = e_interaction_id) -> edges_new
+
+head(edges_new)
+```
+
+Writing out
+
+```{r}
+write_csv(edges_new, "../output/tables/edges_241210.csv")
+```
+

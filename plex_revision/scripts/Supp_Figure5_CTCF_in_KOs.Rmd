@@ -1,6 +1,8 @@
 ---
-title: "Figure 3: enhancer marks in KOs"
-output: html_notebook
+title: 'Figure 3: enhancer marks in KOs'
+output:
+  html_document:
+    df_print: paged
 ---
 
 This script will create Supplemental Figure 5e of the manuscript using the EM and Louvain clusters which were identified during the paper revision process.
@@ -33,7 +35,7 @@ magic_table_uncapped %>%
   filter(EM_cluster_ID == 10 | EM_cluster_ID == 19) %>% 
   select(interaction_ID, EM_cluster_ID, contains("CTCF")) %>% 
   select(interaction_ID, EM_cluster_ID, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) -> CTCF_EM
 
@@ -51,7 +53,7 @@ CTCF_EM %>%
   mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("EM clustering") +
@@ -79,7 +81,7 @@ magic_table_uncapped %>%
   filter(Louvain_cluster_ID == 1 | Louvain_cluster_ID == 19 | Louvain_cluster_ID == 15) %>% 
   select(interaction_ID, Louvain_cluster_ID, contains("CTCF")) %>% 
   select(interaction_ID, Louvain_cluster_ID, contains("EpiLC_D2")) %>% 
-  pivot_longer(3:last_col(), names_to = "sample", values_to = "log2RPKM") %>% 
+  pivot_longer(3:last_col(), names_to = "sample", values_to = "RPKM") %>% 
   separate(sample, into = c("fragment", "mark", "line", "genotype", "stage", "day")) %>% 
   select(-mark, -stage, -day) %>% 
   mutate(Louvain_cluster_ID = case_when(Louvain_cluster_ID == 1 ~ "cluster 1/19",
@@ -99,7 +101,7 @@ CTCF_Louvain %>%
   mutate(genotype = factor(genotype, levels = c("WT", "KO"))) %>% 
   unite(line, genotype, col = "condition", sep = " ") %>% 
   mutate(condition = factor(condition, levels = c("Dnmt WT", "Dnmt KO", "", "Tet WT", "Tet KO"))) %>% 
-  ggplot(aes(condition, log2RPKM, fill = condition)) +
+  ggplot(aes(condition, RPKM, fill = condition)) +
   ylim(0,10) +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
   ggtitle("Louvain clustering") +

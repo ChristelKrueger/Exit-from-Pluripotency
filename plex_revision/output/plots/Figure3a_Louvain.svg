@@ -110,7 +110,7 @@
 <polyline points='47.94,181.21 51.92,181.21 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='47.94,137.99 51.92,137.99 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='47.94,94.76 51.92,94.76 ' style='stroke-width: 1.55; stroke: #333333; stroke-linecap: butt;' />
-<text x='201.98' y='312.49' text-anchor='middle' style='font-size: 16.00px; font-family: "Arial";' textLength='168.94px' lengthAdjust='spacingAndGlyphs'>Difference (log2 RPKM)</text>
+<text x='201.98' y='312.49' text-anchor='middle' style='font-size: 16.00px; font-family: "Arial";' textLength='134.24px' lengthAdjust='spacingAndGlyphs'>Difference (RPKM)</text>
 <text transform='translate(19.45,165.85) rotate(-90)' text-anchor='middle' style='font-size: 16.00px; font-family: "Arial";' textLength='50.70px' lengthAdjust='spacingAndGlyphs'>density</text>
 <rect x='209.56' y='60.28' width='137.89' height='67.78' style='stroke-width: 0.75; fill: #FFFFFF;' />
 <rect x='209.56' y='60.28' width='137.89' height='67.78' style='stroke-width: 1.55; stroke: none; fill: #FFFFFF;' />

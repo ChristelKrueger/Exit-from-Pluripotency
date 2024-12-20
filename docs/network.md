@@ -5,6 +5,8 @@ hide:
 
 Global interactions were also represented as a network largely based on the Canvas representation introduced in Chovanec, Collier et al., 2021.  The R igraph package was used to construct an undirected graph in which genomic regions (HindIII fragments) are represented as vertices/nodes and interactions are represented as edges. A combined network was produced using all significant interactions in any of the conditions. This allows for changes in interactions between the different conditions. The network was visualised with a force-directed layout (ForceAtlas2) in Gephi v0.9. This representation pulls highly interacting regions closer together while less interacting regions are kept apart.
 
+The underlying network data can be downloaded [here](../plex_revision/network/network_all_conditions.csv).
+
 Layout parameters were as follows:
 
 ![Gephi layout parameters](images/Gephi_parameters.png)

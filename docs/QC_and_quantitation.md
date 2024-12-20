@@ -36,18 +36,20 @@ ChIP input samples were used to exclude coverage outliers and some regions which
 
 ## Quantitation
 
-PCHiC data as given in linear CHiCAGO scores, if an interaction was found in both directions, the maximum score was used.
+PCHiC data as given in linear CHiCAGO scores (-log weighted p-values), if an interaction was found in both directions, the maximum score was used. Interactions were called significant and included in the analysis if their CHiCAGO score was ≥ 5 in any of the conditions as suggested by the method authors.
 
 To integrate PCHiC with ChIP, ATAC and HMCP data, reads were quantitated across HindIII fragments and normalised for length and total number of reads in the sample (RPKM).
 
 WGBS data was quantitated across 100 CpG using the Seqmonk methylation quantitation pipeline (min count per position = 1, min number of observations = 20) and is expressed in percent. To obtain methylation levels on HindIII fragment resolution, fragments were overlapped with 100 CpG windows. If a HindIII fragment overlapped with more than one 100 CpG window, the average was taken.
+
+RNA data was quantitated using the Seqmonk RNA-Seq quantitation pipeline and is given as log2 RPKM values.
 
 All values are replicate averages.
 
 
 ## Data integration
 
-PCHiC interacting pairs form the basis for UMAP and network representations. Quantitated data from different modalities were collated in a data table in which rows represent an interaction pair and columns are attributes of the interaction (PCHiC) or the respective bait and promoter interacting region (PIR) (ATAC, ChIP, HMCP, WGBS). Values are linear. For some visualisations (mainly were level of the mark was represented as colour) capped values were used to obtain a more reasonable scale. Caps were introduced at 3x MAD (mean absolute deviation). Both bait and PIR were annotated with promoters (overlapping gene start coordinates); if more than one promoter was present in the HindIII fragment, the most upstream was used. Data tables for both raw and capped quantitations by interaction pair are provided as processed data on GEO.
+PCHiC interacting pairs form the basis for UMAP and network representations. Quantitated data from different modalities were collated in a data table in which rows represent an interaction pair and columns are attributes of the interaction (PCHiC) or the respective bait and promoter interacting region (PIR) (ATAC, ChIP, HMCP, WGBS). Values are linear. For some visualisations (were level of the mark was represented as colour) capped values were used to obtain a more reasonable scale. Caps were introduced at 3x MAD (mean absolute deviation). Both bait and PIR were annotated with promoters (overlapping gene start coordinates); if more than one promoter was present in the HindIII fragment, the most upstream was used. Data tables for both raw and capped quantitations by interaction pair are provided as processed data on GEO.
 
 
  

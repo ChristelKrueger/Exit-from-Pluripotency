@@ -46,30 +46,51 @@ We then evaluated chromatin/DNA marks per cluster and grouped them according to 
 ### EM cluster grouping 
 
 EM activeP lowmarkedPIR: 4, 7, 10, 11, 12, 13, 18, 16
+
 EM pcP unmarkedPIR: 0, 2, 9
+
 EM inactiveP unmarkedPIR: 1, 5, 6, 15
+
 EM inactiveP CTCFprimedE: 19
+
 EM inactiveP primedE: 14
+
 EM bivalentP poisedE:  3
+
 EM activeP activeP: 17
+
 EM activeP activeE: 8
 
 ### Louvain cluster grouping 
 
 Louvain activeP lowmarkedPIR: 2, 5, 9, 13, 15, 16
+
 Louvain pcP unmarkedPIR :0, 12, 17, 30
+
 Louvain inactiveP unmarkedPIR: 3, 4, 7, 9, 10, 14, 21, 22, 23, 26, 27, 28, 29
+
 Louvain inactiveP CTCFprimedE: 1, 19
+
 Louvain inactiveP primedE: 20, 6
+
 Louvain bivalentP poisedE:  18, 25
+
 Louvain activeP activeP: 11, 24
+
 Louvain activeP activeE: 8
 
 ## EM and Louvain clustering comparison
 
-![UMAP with EM clusters](./images/UMAP_EM_clusters.png)
+<figure markdown="span">
+  ![UMAP with EM clusters](./images/UMAP_EM_clusters.png){ width="300" }
+</figure>
 
-![UMAO with Louvain clusters](./images/UMAP_Louvain_clusters.png)
+
+<figure markdown="span">
+  ![UMAO with Louvain clusters](./images/UMAP_Louvain_clusters.png){ width="300" }
+</figure>
+
+
 
 
 

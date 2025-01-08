@@ -20,7 +20,7 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Figure 3e
 <figure markdown>
-  ![](./images/Louvain_paper_figures/Figure3e_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/Figure3e_Louvain.png){width="500"}
 </figure>
 
 ### Figure 4d left
@@ -35,22 +35,22 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Figure 4f
 <figure markdown>
-  ![](./images/Louvain_paper_figures/Figure4f_expression_violins_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/Figure4f_expression_violins_Louvain.png){width="400"}
 </figure>
 
 ### Figure 4g downregulated
 <figure markdown>
-  ![](./images/Louvain_paper_figures/Figure4g_down_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/Figure4g_down_Louvain.png){width="500"}
 </figure>
 
 ### Figure 4g stable
 <figure markdown>
-  ![](./images/Louvain_paper_figures/Figure4g_stable_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/Figure4g_stable_Louvain.png){width="500"}
 </figure>
 
 ### Figure 4h
 <figure markdown>
-  ![](./images/Louvain_paper_figures/Figure4h_number_enhancer_line_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/Figure4h_number_enhancer_line_Louvain.png){width="500"}
 </figure>
 
 ### Figure 6b
@@ -75,37 +75,37 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Supplemental Figure 4c
 <figure markdown>
-  ![](/Users/ckrueger/github_repositories/exit_from_pluripotency/./images/Louvain_paper_figures/SuppFigure4c_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4c_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 4d
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4d_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4d_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 4e
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4e_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4e_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 4f
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4f_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4f_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 4g
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4g_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4g_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 4h
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4h_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure4h_Louvain.png){width="400"}
 </figure>
 
 ### Supplemental Figure 5e
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure5e_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure5e_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6b stable - mark levels
@@ -115,47 +115,47 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Supplemental Figure 6b downregulated - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6b_down_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6b_down_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6c stable
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6c downregulated
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6c_down_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6c_down_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6c stable - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6c downregulated - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6c_down_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6c_down_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6d stable
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6c_stable_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6d downregulated
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6d_down_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6d_down_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6d stable - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6d_stable_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6d_stable_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6d downregulated - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6d_down_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6d_down_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 8d

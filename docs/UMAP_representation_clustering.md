@@ -39,45 +39,35 @@ As an alternative to EM clustering and to test the robustness of the clustering 
 
 ## Grouping clusters
 
-While the number of clusters for Louvain clustering was chosen empirically and set to 20, Louvain clustering with the given settings produced 30 clusters. However, 9 clusters had fewer than 600 interaction pairs (the larger clusters having between 14 and 21,000 interaction pairs) and were therefore excluded from further analysis.
+While the number of clusters for Louvain clustering was chosen empirically and set to 20, Louvain clustering with the given settings produced 30 clusters. However, 9 clusters had fewer than 600 interaction pairs (the larger clusters having between 14,000 and 21,000 interaction pairs) and were therefore excluded from further analysis.
 
 We then evaluated chromatin/DNA marks per cluster and grouped them according to presumed biological function.
 
 ### EM cluster grouping 
 
-EM activeP lowmarkedPIR: 4, 7, 10, 11, 12, 13, 18, 16
-
-EM pcP unmarkedPIR: 0, 2, 9
-
-EM inactiveP unmarkedPIR: 1, 5, 6, 15
-
-EM inactiveP CTCFprimedE: 19
-
-EM inactiveP primedE: 14
-
-EM bivalentP poisedE:  3
-
-EM activeP activeP: 17
-
-EM activeP activeE: 8
+|cluster group|individual clusters|
+|---|----|
+|EM activeP lowmarkedPIR| 4, 7, 10, 11, 12, 13, 18, 16|
+|EM pcP unmarkedPIR| 0, 2, 9|
+|EM inactiveP unmarkedPIR| 1, 5, 6, 15|
+|EM inactiveP CTCFprimedE| 19|
+|EM inactiveP primedE| 14|
+|EM bivalentP poisedE|  3|
+|EM activeP activeP| 17|
+|EM activeP activeE| 8|
 
 ### Louvain cluster grouping 
 
-Louvain activeP lowmarkedPIR: 2, 5, 9, 13, 15, 16
-
-Louvain pcP unmarkedPIR :0, 12, 17, 30
-
-Louvain inactiveP unmarkedPIR: 3, 4, 7, 9, 10, 14, 21, 22, 23, 26, 27, 28, 29
-
-Louvain inactiveP CTCFprimedE: 1, 19
-
-Louvain inactiveP primedE: 20, 6
-
-Louvain bivalentP poisedE:  18, 25
-
-Louvain activeP activeP: 11, 24
-
-Louvain activeP activeE: 8
+|cluster group|individual clusters|
+|---|----|
+|Louvain activeP lowmarkedPIR| 2, 5, 9, 13, 15, 16|
+|Louvain pcP unmarkedPIR| 0, 12, 17, 30|
+|Louvain inactiveP unmarkedPIR| 3, 4, 7, 9, 10, 14, 21, 22, 23, 26, 27, 28, 29|
+|Louvain inactiveP CTCFprimedE| 1, 19|
+|Louvain inactiveP primedE| 20, 6|
+|Louvain bivalentP poisedE|  18, 25|
+|Louvain activeP activeP| 11, 24|
+|Louvain activeP activeE| 8|
 
 ## EM and Louvain clustering comparison
 

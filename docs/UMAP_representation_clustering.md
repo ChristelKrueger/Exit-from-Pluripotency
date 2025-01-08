@@ -72,12 +72,12 @@ We then evaluated chromatin/DNA marks per cluster and grouped them according to 
 ## EM and Louvain clustering comparison
 
 <figure markdown>
-  ![UMAP with EM clusters](./images/UMAP_EM_clusters.png){width = "600"}
+  ![UMAP with EM clusters](./images/UMAP_EM_clusters.png){width="600"}
 </figure>
 
 
 <figure markdown>
-  ![UMAP with Louvain clusters](./images/UMAP_Louvain_clusters.png){width = "600"}
+  ![UMAP with Louvain clusters](./images/UMAP_Louvain_clusters.png){width="600"}
 </figure>
 
 

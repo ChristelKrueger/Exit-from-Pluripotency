@@ -2,6 +2,13 @@
 
 In the main paper all figures that are based on cluster groups use the clusters obtained by the EM algorithm. Here we provide the same figures based on the Louvain cluster groups.
 
+
+### Figure 2b
+<figure markdown>
+  ![](./images/UMAP_Louvain_clusters.png){width="700"}
+</figure>
+
+
 ### Figure 3a
 <figure markdown>
   ![](./images/Louvain_paper_figures/Figure3a_Louvain.png){width="600"}
@@ -110,7 +117,7 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Supplemental Figure 6b stable - mark levels
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure6b_stable_levels_Louvain.png){width="600"}
+  ![](./images/Louvain_paper_figures/SuppFigure6b_stable_levels_Louvain.png){width="500"}
 </figure>
 
 ### Supplemental Figure 6b downregulated - mark levels

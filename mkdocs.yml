@@ -5,6 +5,7 @@ nav:
   - Home: index.md
   - QC and Quantitation: QC_and_quantitation.md
   - UMAP representation and Clustering: UMAP_representation_clustering.md
+  - paper figures based on Louvain clusters: paper_figures_Louvain_clustering.md
   - Network: network.md
   - Software: software.md
   

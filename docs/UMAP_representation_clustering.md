@@ -77,7 +77,7 @@ We then evaluated chromatin/DNA marks per cluster and grouped them according to 
 
 
 <figure markdown>
-  ![UMAO with Louvain clusters](./images/UMAP_Louvain_clusters.png){width = "600"}
+  ![UMAP with Louvain clusters](./images/UMAP_Louvain_clusters.png){width = "600"}
 </figure>
 
 

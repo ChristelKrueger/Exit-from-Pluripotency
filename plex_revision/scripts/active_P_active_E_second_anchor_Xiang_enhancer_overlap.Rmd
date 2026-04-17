@@ -80,20 +80,34 @@ overlap_with_xiang <- function(interaction_ids) {
 }
 
 make_overlap_pie <- function(overlap_hits, plot_title) {
+  # Narrower bar = smaller disk; text sizes tuned separately
+  sz_title <- 15
+  sz_caption <- 18
+  sz_pct <- 5.8
+  sz_legend <- 13
+  sz_empty <- 6.5
+  # Radius: bar centered at x = 1 with width 0.62 → outer edge ~1.31; labels sit outside the ring
+  label_x <- 1.4
+
   n_tot <- length(overlap_hits)
   if (n_tot == 0L) {
     return(
       ggplot() +
-        theme_void(base_size = 16) +
+        theme_void(base_size = sz_caption) +
         labs(
           title = plot_title,
           caption = "Total regions: 0"
         ) +
         theme(
-          plot.title = element_text(hjust = 0.5, size = 11),
-          plot.caption = element_text(hjust = 0.5, size = 10, margin = margin(t = 8))
+          plot.title = element_text(
+            hjust = 0.5,
+            size = sz_title,
+            lineheight = 1.15,
+            margin = margin(b = 6)
+          ),
+          plot.caption = element_text(hjust = 0.5, size = sz_caption, margin = margin(t = 12))
         ) +
-        annotate("text", x = 0, y = 0, label = "No interactions", size = 4)
+        annotate("text", x = 0, y = 0, label = "No interactions", size = sz_empty)
     )
   }
   n_ov <- sum(overlap_hits)
@@ -102,35 +116,53 @@ make_overlap_pie <- function(overlap_hits, plot_title) {
     status = factor(c("Overlap", "No overlap"), levels = c("Overlap", "No overlap")),
     n = c(n_ov, n_no)
   ) %>%
-    mutate(pct = 100 * n / sum(n))
+    mutate(
+      pct = 100 * n / sum(n),
+      ymin = cumsum(lag(n, default = 0)),
+      ymax = cumsum(n),
+      ymid = (ymin + ymax) / 2,
+      lab = paste0(round(pct, 1), "%")
+    )
 
-  ggplot(pie_tbl, aes(x = "", y = n, fill = status)) +
+  ggplot(pie_tbl, aes(x = 1, y = n, fill = status)) +
     geom_bar(
       stat = "identity",
-      width = 1,
+      width = 0.62,
       color = "white",
-      linewidth = 0.2,
+      linewidth = 0.35,
       position = position_stack(reverse = TRUE)
     ) +
-    coord_polar(theta = "y", start = 0, direction = 1) +
+    geom_text(
+      data = pie_tbl,
+      inherit.aes = FALSE,
+      aes(y = ymid, label = lab),
+      x = label_x,
+      size = sz_pct
+    ) +
+    coord_polar(theta = "y", start = 0, direction = 1, clip = "off") +
+    scale_x_continuous(expand = expansion(mult = c(0.04, 0.12))) +
     scale_fill_manual(
       values = c("No overlap" = "grey75", "Overlap" = "grey25"),
       name = NULL
-    ) +
-    geom_text(
-      aes(label = paste0(round(pct, 1), "%")),
-      position = position_stack(reverse = TRUE, vjust = 0.5),
-      size = 3.2
     ) +
     labs(
       title = plot_title,
       caption = paste0("Total regions: ", format(n_tot, big.mark = ","))
     ) +
-    theme_void(base_size = 16) +
+    theme_void(base_size = sz_caption) +
     theme(
       legend.position = "right",
-      plot.title = element_text(hjust = 0.5, size = 11, face = "plain"),
-      plot.caption = element_text(hjust = 0.5, size = 10, margin = margin(t = 8))
+      legend.text = element_text(size = sz_legend),
+      legend.key.size = unit(0.9, "lines"),
+      plot.title = element_text(
+        hjust = 0.5,
+        size = sz_title,
+        face = "plain",
+        lineheight = 1.15,
+        margin = margin(b = 6)
+      ),
+      plot.caption = element_text(hjust = 0.5, size = sz_caption, margin = margin(t = 12)),
+      plot.margin = margin(8, 8, 12, 8)
     )
 }
 ```
@@ -138,23 +170,22 @@ make_overlap_pie <- function(overlap_hits, plot_title) {
 
 ### EM clustering
 
-```{r pies_em, fig.width = 12, fig.height = 4.6}
+```{r pies_em, fig.width = 12, fig.height = 5.8}
 plots_em <- map(cluster_groups, function(g) {
   ids <- pairs_min %>%
     filter(EM_cluster_group == g) %>%
     pull(interaction_ID)
   hits <- overlap_with_xiang(ids)
-  make_overlap_pie(hits, paste0("EM cluster group ", g))
+  make_overlap_pie(hits, paste0("EM cluster group\n", g))
 })
 p_em <- wrap_plots(plots_em, ncol = 3)
 p_em
 
-dir.create("../output/plots", showWarnings = FALSE, recursive = TRUE)
 ggsave(
   "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_EM.svg",
   p_em,
   width = 12,
-  height = 4.6,
+  height = 5.8,
   units = "in",
   device = "svg"
 )
@@ -163,7 +194,7 @@ ggsave(
   "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_EM.png",
   p_em,
   width = 12,
-  height = 4.6,
+  height = 5.8,
   units = "in",
   device = "png"
 )
@@ -172,13 +203,13 @@ ggsave(
 
 ### Louvain clustering
 
-```{r pies_louvain, fig.width = 12, fig.height = 4.6}
+```{r pies_louvain, fig.width = 12, fig.height = 5.8}
 plots_lou <- map(cluster_groups, function(g) {
   ids <- pairs_min %>%
     filter(Louvain_cluster_group == g) %>%
     pull(interaction_ID)
   hits <- overlap_with_xiang(ids)
-  make_overlap_pie(hits, paste0("Louvain cluster group ", g))
+  make_overlap_pie(hits, paste0("Louvain cluster group\n", g))
 })
 p_lou <- wrap_plots(plots_lou, ncol = 3)
 p_lou
@@ -187,7 +218,7 @@ ggsave(
   "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.svg",
   p_lou,
   width = 12,
-  height = 4.6,
+  height = 5.8,
   units = "in",
   device = "svg"
 )
@@ -196,7 +227,7 @@ ggsave(
   "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.png",
   p_lou,
   width = 12,
-  height = 4.6,
+  height = 5.8,
   units = "in",
   device = "png"
 )

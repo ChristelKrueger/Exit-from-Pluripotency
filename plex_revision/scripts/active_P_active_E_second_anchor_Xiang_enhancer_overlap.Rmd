@@ -1,0 +1,203 @@
+---
+title: "Second-anchor overlap with Xiang epiblast enhancers (GRCm38), by cluster group"
+output:
+  html_document:
+    df_print: paged
+---
+
+For each interaction we take the **second** genomic interval encoded in `interaction_ID` (format `chr_start_end...chr_start_end`) and ask how many of these regions overlap the epiblast enhancer calls from Xiang et al. (GRCm38 BED). Only `interaction_ID`, `EM_cluster_group`, and `Louvain_cluster_group` are read from `interaction_pairs_uncapped.txt`. Aside from subsetting by the cluster group for each panel, **no other filtering** is applied.
+
+**What counts as overlap:** each second-anchor interval is compared to the Xiang BED using `GenomicRanges::countOverlaps` (default **any** overlap between intervals on the same chromosome, strand ignored). A region is counted in the **Overlap** slice if it shares **at least one base pair** with **at least one** enhancer interval. This is a binary yes/no per interaction; it is **not** the fraction of the query interval covered by enhancers, nor a minimum overlap length beyond that single-base requirement.
+
+
+Loading packages and options
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(GenomicRanges)
+library(patchwork)
+options(scipen = 999)
+theme_set(theme_bw(base_size = 16))
+dir.create("../output/plots", showWarnings = FALSE, recursive = TRUE)
+```
+
+
+Cluster groups to compare (same labels for EM and Louvain)
+
+```{r cluster_groups}
+cluster_groups <- c(
+  "active P - active E",
+  "inactive P - primed E",
+  "inactive P - unmarked PIR"
+)
+```
+
+
+Read only the identifier and cluster columns; load Xiang enhancers once
+
+```{r import}
+read_tsv(
+  "../data/interaction_pairs_uncapped.txt",
+  col_select = all_of(c("interaction_ID", "EM_cluster_group", "Louvain_cluster_group")),
+  show_col_types = FALSE
+) -> pairs_min
+
+read.table(
+  "../data/Xiang_epiblast_enhancers_GRCm38.bed",
+  col.names = c("chr", "start", "end"),
+  stringsAsFactors = FALSE
+) -> xiang_bed
+
+gr_xiang <- GRanges(
+  seqnames = xiang_bed$chr,
+  ranges = IRanges(start = xiang_bed$start, end = xiang_bed$end)
+)
+```
+
+
+Parse each second anchor, drop rows that do not match the expected pattern, then test overlap (one logical per successfully parsed interval)
+
+```{r overlap_fn}
+overlap_with_xiang <- function(interaction_ids) {
+  parsed <- tibble(interaction_ID = interaction_ids) %>%
+    mutate(second = str_split(interaction_ID, fixed("..."), simplify = TRUE)[, 2]) %>%
+    tidyr::extract(
+      second,
+      into = c("chr", "start", "end"),
+      regex = "^([^_]+)_([^_]+)_([^_]+)$",
+      convert = TRUE
+    ) %>%
+    drop_na(chr, start, end)
+  if (nrow(parsed) == 0L) {
+    return(logical(0))
+  }
+  gr_q <- GRanges(
+    seqnames = paste0("chr", parsed$chr),
+    ranges = IRanges(start = parsed$start, end = parsed$end)
+  )
+  # any overlap on the same chromosome (>= 1 shared bp); not %-coverage of the query
+  countOverlaps(gr_q, gr_xiang, ignore.strand = TRUE) > 0
+}
+
+make_overlap_pie <- function(overlap_hits, plot_title) {
+  n_tot <- length(overlap_hits)
+  if (n_tot == 0L) {
+    return(
+      ggplot() +
+        theme_void(base_size = 16) +
+        labs(
+          title = plot_title,
+          caption = "Total regions: 0"
+        ) +
+        theme(
+          plot.title = element_text(hjust = 0.5, size = 11),
+          plot.caption = element_text(hjust = 0.5, size = 10, margin = margin(t = 8))
+        ) +
+        annotate("text", x = 0, y = 0, label = "No interactions", size = 4)
+    )
+  }
+  n_ov <- sum(overlap_hits)
+  n_no <- sum(!overlap_hits)
+  pie_tbl <- tibble(
+    status = factor(c("Overlap", "No overlap"), levels = c("Overlap", "No overlap")),
+    n = c(n_ov, n_no)
+  ) %>%
+    mutate(pct = 100 * n / sum(n))
+
+  ggplot(pie_tbl, aes(x = "", y = n, fill = status)) +
+    geom_bar(
+      stat = "identity",
+      width = 1,
+      color = "white",
+      linewidth = 0.2,
+      position = position_stack(reverse = TRUE)
+    ) +
+    coord_polar(theta = "y", start = 0, direction = 1) +
+    scale_fill_manual(
+      values = c("No overlap" = "grey75", "Overlap" = "grey25"),
+      name = NULL
+    ) +
+    geom_text(
+      aes(label = paste0(round(pct, 1), "%")),
+      position = position_stack(reverse = TRUE, vjust = 0.5),
+      size = 3.2
+    ) +
+    labs(
+      title = plot_title,
+      caption = paste0("Total regions: ", format(n_tot, big.mark = ","))
+    ) +
+    theme_void(base_size = 16) +
+    theme(
+      legend.position = "right",
+      plot.title = element_text(hjust = 0.5, size = 11, face = "plain"),
+      plot.caption = element_text(hjust = 0.5, size = 10, margin = margin(t = 8))
+    )
+}
+```
+
+
+### EM clustering
+
+```{r pies_em, fig.width = 12, fig.height = 4.6}
+plots_em <- map(cluster_groups, function(g) {
+  ids <- pairs_min %>%
+    filter(EM_cluster_group == g) %>%
+    pull(interaction_ID)
+  hits <- overlap_with_xiang(ids)
+  make_overlap_pie(hits, paste0("EM cluster group ", g))
+})
+p_em <- wrap_plots(plots_em, ncol = 3)
+p_em
+
+dir.create("../output/plots", showWarnings = FALSE, recursive = TRUE)
+ggsave(
+  "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_EM.svg",
+  p_em,
+  width = 12,
+  height = 4.6,
+  units = "in",
+  device = "svg"
+)
+
+ggsave(
+  "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_EM.png",
+  p_em,
+  width = 12,
+  height = 4.6,
+  units = "in",
+  device = "png"
+)
+```
+
+
+### Louvain clustering
+
+```{r pies_louvain, fig.width = 12, fig.height = 4.6}
+plots_lou <- map(cluster_groups, function(g) {
+  ids <- pairs_min %>%
+    filter(Louvain_cluster_group == g) %>%
+    pull(interaction_ID)
+  hits <- overlap_with_xiang(ids)
+  make_overlap_pie(hits, paste0("Louvain cluster group ", g))
+})
+p_lou <- wrap_plots(plots_lou, ncol = 3)
+p_lou
+
+ggsave(
+  "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.svg",
+  p_lou,
+  width = 12,
+  height = 4.6,
+  units = "in",
+  device = "svg"
+)
+
+ggsave(
+  "../output/plots/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.png",
+  p_lou,
+  width = 12,
+  height = 4.6,
+  units = "in",
+  device = "png"
+)
+```

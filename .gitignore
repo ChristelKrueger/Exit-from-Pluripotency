@@ -9,3 +9,4 @@ plex_revision/data/clusters_20_capped_marks_220517.txt
 plex_revision/data/umap_mark_data_capped.txt
 /plex_revision/data/interaction_pairs_capped.txt
 /plex_revision/data/interaction_pairs_uncapped.txt
+/plex_revision/data/GSE223578_interaction_pair_marks.txt.gz

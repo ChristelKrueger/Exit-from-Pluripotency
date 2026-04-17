@@ -80,6 +80,11 @@ In the main paper all figures that are based on cluster groups use the clusters 
   ![](./images/Louvain_paper_figures/Figure6e_CHiC_blood_enhancers_Louvain.png){width="600"}
 </figure>
 
+### Supplemental Figure 4b
+<figure markdown>
+  ![](./images/Louvain_paper_figures/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.png){width="400"}
+</figure>
+
 ### Supplemental Figure 4c
 <figure markdown>
   ![](./images/Louvain_paper_figures/SuppFigure4c_Louvain.png){width="400"}

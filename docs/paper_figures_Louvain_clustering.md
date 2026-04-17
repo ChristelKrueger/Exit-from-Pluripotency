@@ -82,7 +82,7 @@ In the main paper all figures that are based on cluster groups use the clusters 
 
 ### Supplemental Figure 4b
 <figure markdown>
-  ![](./images/Louvain_paper_figures/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.png){width="400"}
+  ![](./images/Louvain_paper_figures/SuppFigure4b_Xiang_enhancer_overlap_pies_Louvain.png){width="600"}
 </figure>
 
 ### Supplemental Figure 4c
